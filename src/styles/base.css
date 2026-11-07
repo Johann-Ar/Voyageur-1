@@ -1,0 +1,42 @@
+/*
+ * VOYAGEUR 1 — base.
+ * Palette : noir profond, gris du signal, or du disque. La couleur n'entre qu'avec les images couleur.
+ * Polices (Velvetyne, SIL OFL 1.1) — à déposer dans public/fonts/ (voir README) :
+ *   Steps Mono (J.-B. Morizot & R. Bastide) pour les données ; Karrik (J.-B. Morizot & L. Le Bihan) pour le texte.
+ */
+/* TRIAL-Vargas (alex-creq) — version d'essai, voir CREDITS.md : Black pour les titres, Regular pour le texte, Light pour les infos */
+@font-face { font-family: 'Vargas'; src: url('/fonts/TRIAL-Vargas-Black.otf') format('opentype'); font-weight: 900; font-display: swap; }
+@font-face { font-family: 'Vargas'; src: url('/fonts/TRIAL-Vargas-Regular.otf') format('opentype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Vargas'; src: url('/fonts/TRIAL-Vargas-Light.otf') format('opentype'); font-weight: 300; font-display: swap; }
+@font-face { font-family: 'Commit Mono'; src: url('/fonts/CommitMono-400-Regular.otf') format('opentype'); font-weight: 400; font-display: swap; }   /* Commit Mono, Eigil Nikolajsen, licence OFL : corps de texte */
+@font-face { font-family: 'Commit Mono'; src: url('/fonts/CommitMono-400-Italic.otf') format('opentype'); font-weight: 400; font-style: italic; font-display: swap; }   /* l'italique (même licence OFL), pour « (son recommandé) » */
+@font-face { font-family: 'Bagerich'; src: url('/fonts/BagerichDemo.otf') format('opentype'); font-display: swap; }   /* essai pour « ET NOUS » (version démo) */
+
+:root {
+  --noir: #000;
+  --noir-2: #0e0e0d;
+  --noir-3: #171716;
+  --trait: #2a2a28;
+  --signal-1: #5d5d59;   /* gris du signal, sombre */
+  --signal-2: #8e8e88;
+  --signal-3: #c4c4bd;
+  --papier: #ffffff;
+  --or: #cb910f;   /* tirés de la texture or brossé (matiere-or.jpg) */
+  --or-clair: #f2c029;
+  --or-sombre: #a46901;
+  --alerte: #d06a4a;
+  --mono: 'Vargas', 'Steps Mono', ui-monospace, monospace;
+  --corps: 'Commit Mono', 'Vargas', ui-monospace, monospace;   /* le corps de texte, plus lisible */
+  --texte: 'Vargas', 'Karrik', ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: var(--noir); color: var(--papier); }
+body { font: 15px/1.5 var(--texte); -webkit-font-smoothing: antialiased; }
+a { color: var(--or); text-underline-offset: 3px; }
+a:hover { color: var(--or-clair); }
+em { font-style: italic; color: var(--signal-3); }
+:focus-visible { outline: 1px solid var(--or); outline-offset: 2px; }
+canvas { image-rendering: auto; display: block; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

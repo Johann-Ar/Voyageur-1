@@ -1,0 +1,502 @@
+/* VOYAGEUR 1 — la page : une grille 2D, noire, sans texte. Le volume n'apparaît qu'à l'ouverture d'une image. */
+body { min-height: 100vh; -webkit-user-select: none; user-select: none; }   /* rien ne se surligne */
+input, textarea, select { -webkit-user-select: auto; user-select: auto; }
+/* fond : noir, poussières et fins défauts (peint au chargement, voir space.ts) */
+/* fond : une photo (ou un fond peint) et une couche de poussières, qui bougent très lentement */
+html, body { background: #000; }
+/* le fond : un calque fixe à part (un fond « fixed » sur le body se repeint à chaque défilement) */
+.fond { position: fixed; left: -50%; top: -50%; width: 200%; height: 200%; z-index: 0; pointer-events: none; background: #000 var(--space) center / cover no-repeat; }   /* deux fois l'écran : au repos, on en voit le centre, comme avant */
+/* points de lumière qui scintillent (space.ts, dessinés par la carte graphique), sous l'interface */
+html.fond-gl .fond { visibility: hidden; }   /* le fond est dessiné avec les étoiles (space.ts) : il bouge avec elles */
+.scintille { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+/* écran simple (externe, sRGB, faible densité : voir space.ts) : le fond et les étoiles un peu plus lumineux, pour que les
+   poussières et les gris très sombres ne soient pas écrasés ; sur l'écran Retina du Mac, rien ne change */
+html.ecran-simple .fond, html.ecran-simple body.space .grid::before { filter: brightness(1.5); } html.ecran-simple .scintille { filter: brightness(1.2); }
+/* l'or du disque : toutes les images, quel que soit leur état */
+:root { --lumiere: #ffffff; --lueur: none;   /* un seul blanc pour tous les textes et icônes, sans lueur */ }
+/* boutons du haut : sans fond, juste le texte et l'icône */
+.grave { background: none; border: 0; box-shadow: none; color: var(--lumiere); text-shadow: var(--lueur); transition: opacity .25s; }   /* sans fond : juste le texte et l'icône, en blanc lumineux */
+.grave:focus-visible { outline: none; }
+/* au survol : le même reflet doré partout (titre, sous-titre, boutons, mots) ; les icônes reçoivent
+   exactement le même dégradé par reflet.ts */
+.brand:hover .word, .brand:hover .sous-titre, .add, .vue-btn .vue-lbl > span, .p-ecouter span, .p-titre { background: linear-gradient(125deg, var(--lumiere) 44.5%, #b9862c 47.3%, #f0bd52 48.4%, #fff3cf 49.4%, #ffffff 50%, #fff3cf 50.6%, #f0bd52 51.6%, #b9862c 52.7%, var(--lumiere) 55.5%) 100% 0 / 300% 100% no-repeat;   /* en diagonale, plus fin : ambre, or, cœur blanc */
+  -webkit-background-clip: text; background-clip: text; color: transparent !important; -webkit-text-fill-color: transparent; }
+.brand:hover .word, .add:hover, .vue-btn:hover .vue-lbl > span, .p-ecouter:hover span, .p-ecouter:focus-visible span { animation: reflet 1.25s cubic-bezier(.35, .1, .25, 1) 1; }
+.brand:hover .sous-titre { animation: reflet 1.25s cubic-bezier(.35, .1, .25, 1) .7s 1; }   /* « LE DISQUE D’OR » : juste après « VOYAGEUR 1 » */
+@keyframes reflet { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+/* le titre de l'accueil : le reflet passe de lui-même, régulièrement (toutes les 7 s), et aussi au survol */
+.p-titre { animation: reflet-regulier 7s cubic-bezier(.35, .1, .25, 1) 1.5s infinite; }
+.p-titre:hover { animation: reflet 1.25s cubic-bezier(.35, .1, .25, 1) 1; }
+/* le bouton « Établir le contact » : le même reflet, au même rythme, qui part pile quand celui du titre s'achève (1,5 s + 18 % de 7 s),
+   comme une seule lumière qui passe du titre au bouton ; au survol, il reprend son reflet immédiat */
+.p-ecouter span { animation: reflet-regulier 7s cubic-bezier(.35, .1, .25, 1) 2.76s infinite; }
+@keyframes reflet-regulier { 0% { background-position: 100% 0; } 18%, 100% { background-position: 0% 0; } }
+@media (prefers-reduced-motion: reduce) { .p-titre, .p-ecouter span { animation: none; } }
+.grave svg { filter: drop-shadow(0 0 3px rgba(255, 255, 255, .35)); }
+/* arrivée : le recto du disque rejoint le logo */
+
+/* en-tête */
+.top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 16px clamp(16px, 3vw, 36px); background: linear-gradient(var(--noir) 60%, rgba(6, 6, 6, 0)); }
+.brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: var(--papier); }
+.brand:hover, .brand:active, .brand:focus, .brand:focus-visible, .brand:visited { color: var(--papier); outline: none; }   /* le titre ne change jamais de couleur */
+.brand .disc { width: 60px; height: 60px; display: block; border-radius: 50%; will-change: transform; }
+.brand .word { font: 400 32px 'Bagerich', var(--mono); letter-spacing: .1em; text-shadow: var(--lueur); color: var(--lumiere); -webkit-font-smoothing: antialiased; }   /* au repos : texte blanc ordinaire (net) ; le dégradé doré découpé dans les lettres n'est posé qu'au survol, pour le reflet */
+.brand .titres { display: flex; flex-direction: column; justify-content: center; gap: 0; line-height: .8; }   /* le bloc de texte est centré sur le petit disque */
+.brand .sous-titre { margin-top: -7px; font: 400 22px var(--mono);   /* Vargas */ -webkit-font-smoothing: antialiased; letter-spacing: .12em; text-transform: uppercase; color: var(--lumiere); text-shadow: var(--lueur); }
+
+.add { position: relative; display: inline-flex; align-items: center; gap: 10px; padding: 0; height: 48px; line-height: 1; border-radius: 2px;
+  color: var(--or); font: 18px var(--mono); letter-spacing: .12em; text-transform: uppercase; -webkit-text-stroke: .35px var(--lumiere); cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
+.add::before { content: '+'; font-size: 34px; font-weight: 700; -webkit-text-stroke: 1.1px currentColor; line-height: 1; letter-spacing: 0; }   /* « + » un peu plus fin */
+#file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; overflow: hidden; clip-path: inset(50%); }   /* hors du bouton : Safari affichait son texte « Choisir un fichier » à travers l'effet doré */
+.add:focus-visible { outline: none; }
+
+/* grille justifiée : chaque image garde son format, les lignes remplissent la largeur */
+.grid { position: relative; z-index: 5; min-height: 100vh; }   /* la galerie se pose PAR-DESSUS le disque, qui reste là dessous */
+.grid::before { content: ''; position: fixed; inset: 0; z-index: -1; background: #000; pointer-events: none; }
+body.space .grid::before { background: #000 var(--space) center / 200% auto no-repeat; }
+.grid.cache { opacity: 0; pointer-events: none; }
+.grid.bascule { will-change: opacity; }
+.grid.bascule .cell { transition: none !important; }   /* pendant le fondu de la vue : un seul fondu, pas celui de chaque image */
+.grid { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px clamp(20px, 4vw, 56px) 90px; --h: clamp(112px, 14.5vw, 215px); }   /* images plus grandes, plus d'air entre elles */
+.cell { flex: var(--a) 1 calc(var(--a) * var(--h)); max-width: calc(var(--a) * var(--h) * 1.5); max-height: calc(var(--h) * 1.5); aspect-ratio: var(--a); position: relative; padding: 0; margin: 0; border: 0; border-radius: 7px; background: var(--noir-2);
+  cursor: zoom-in; overflow: hidden; opacity: 0; transform: translateY(8px); transition: opacity .6s ease, transform .6s ease; transition-delay: calc(var(--i) * 18ms); }
+.cell.in { opacity: 1; transform: none; }
+.cell img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(1); transition: filter .35s, transform .6s cubic-bezier(.2, .7, .2, 1); }
+.filler { flex: 1000 1 0; order: 99999999; }   /* toujours en dernier, même avec l'ordre au hasard : la dernière ligne ne s'étire pas */
+
+/* bascule grille / disque */
+.top-actions { display: flex; align-items: center; gap: 32px; height: 60px; transform: translateY(-11px); }   /* un peu plus haut : à hauteur de « VOYAGEUR 1 » */
+.vue-btn { position: relative; height: 48px; display: inline-flex; align-items: center; gap: 10px; padding: 0; line-height: 1; border-radius: 24px; cursor: pointer; }
+.vue-btn .vue-ic, .vue-btn .vue-lbl { display: grid; place-items: center; }
+.vue-btn .vue-ic > *, .vue-btn .vue-lbl > * { grid-area: 1 / 1; }
+.vue-btn .vue-lbl { justify-items: start; font: 18px var(--mono); letter-spacing: .12em; -webkit-text-stroke: .35px var(--lumiere); text-transform: uppercase; color: inherit; text-shadow: var(--lueur); }
+/* le mot suit l'icône : « Galerie » avec l'icône galerie (sur le disque), « Disque » avec l'icône disque (en galerie) */
+.vue-btn .l-grid, .vue-btn[aria-pressed="true"] .l-disc { opacity: 0; transition: opacity .35s ease; }
+.vue-btn .l-disc, .vue-btn[aria-pressed="true"] .l-grid { opacity: 1; transition: opacity .45s ease .35s; }
+.vue-btn svg { grid-area: 1 / 1; width: 34px; height: 34px; fill: none; stroke: currentColor; stroke-width: .95; }   /* icônes affinées */
+.vue-btn .i-grid { stroke-width: .9; }   /* icône galerie un peu plus fine */
+/* passage disque ⇄ galerie : l'icône s'efface doucement, PUIS l'autre apparaît doucement */
+.vue-btn .i-grid, .vue-btn[aria-pressed="true"] .i-disc { opacity: 0; transition: opacity .35s ease; }
+.vue-btn .i-disc, .vue-btn[aria-pressed="true"] .i-grid { opacity: 1; transition: opacity .45s ease .35s; }
+
+/* la scène : le disque en plongée en bas, ses images debout au-dessus */
+body.vue-disque, html:has(body.vue-disque) { height: 100%; overflow: hidden; overscroll-behavior: none; }
+body.vue-disque .top { position: fixed; left: 0; right: 0; }
+body.vue-disque .foot { z-index: 150; }
+.stage { position: fixed; inset: 0; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+  perspective: 1150px; perspective-origin: 50% 30%; }   /* plus de lueur dorée derrière le disque */
+.plane { position: absolute; width: 0; height: 0; transform-style: preserve-3d; transform: translate3d(0, var(--ay, 0px), var(--az, 0px)) translateY(var(--rise, 0px)) rotateX(var(--tilt)) scale(var(--sc, 1)); }   /* --sc : il grossit en arrivant */   /* --ay / --az : l'approche depuis l'accueil (carousel.ts) */
+.disc-body, .disc-edge, .disc-sheen { position: absolute; width: var(--D); height: var(--D); left: calc(var(--D) / -2); top: calc(var(--D) / -2); border-radius: 50%; }
+.disc-body { transform-style: preserve-3d; }
+.face { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: rotateZ(var(--spin, 0deg)); }
+.face.verso { display: none; }   /* jamais visible (le disque ne se retourne pas) : pas de calque de 1 300 px pour rien */
+/* épaisseur : la tranche du disque, juste dessous */
+.disc-edge { transform: translateZ(-9px); background: radial-gradient(circle, #3a2b10 0 96%, #7a5a22 98.5%, #2a1e09 100%); box-shadow: 0 40px 90px rgba(0, 0, 0, .9); }
+/* reflet fixe : la lumière ne tourne pas avec le disque */
+.disc-sheen { transform: translateZ(.6px); pointer-events: none;
+  background:
+    conic-gradient(from 210deg, rgba(255,250,235,0) 0deg, rgba(255,246,220,.0) 22deg, rgba(255,250,235,0) 55deg, rgba(0,0,0,.12) 120deg, rgba(255,250,235,0) 170deg, rgba(255,246,220,.0) 205deg, rgba(255,250,235,0) 240deg, rgba(0,0,0,.12) 300deg, rgba(255,250,235,0) 360deg),
+    radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,.28) 100%); }
+
+.calque { position: absolute; width: 0; height: 0; }   /* fils et images : à plat, chaque élément porte sa propre 3D (voir carousel.ts) */
+.shadows, .ring { position: absolute; }
+
+/* tirage type polaroid : cadre clair, titre en dessous */
+.card { position: absolute; left: 0; top: 0; display: none; padding: 0; border: 0; margin: 0; cursor: pointer; overflow: hidden; border-radius: 7px;
+  width: calc(var(--ch, var(--H)) * var(--a) + 2 * var(--pad)); height: calc(var(--ch, var(--H)) + var(--pad) + var(--cap));
+  margin-left: calc((var(--ch, var(--H)) * var(--a) + 2 * var(--pad)) / -2); margin-top: calc(-1 * (var(--ch, var(--H)) + var(--pad) + var(--cap)));
+  transform-origin: 50% 100%; will-change: transform, opacity; text-align: left;
+  background: #120d05; box-shadow: 0 18px 40px rgba(0, 0, 0, .55); }
+.card .pic { display: block; width: calc(var(--ch, var(--H)) * var(--a)); height: var(--ch, var(--H)); overflow: hidden; }
+.card img, .card canvas { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; filter: grayscale(1); }
+/* flou de vitesse (carousel.ts) : un flou dans le sens du mouvement, seulement quand le disque file très vite */
+.flou-1 .card img, .flou-1 .card canvas { filter: url(#flou1); } .flou-2 .card img, .flou-2 .card canvas { filter: url(#flou2); } .flou-3 .card img, .flou-3 .card canvas { filter: url(#flou3); }
+.card .pic { position: relative; }
+.card .pic .flou-v { position: absolute; inset: 0; opacity: 0; transition: opacity .25s linear; }   /* Safari, Firefox : le flou de bougé précalculé (carousel.ts), dosé par son opacité */
+html.flou-css :is(.flou-1, .flou-2, .flou-3) .card :is(img, canvas) { filter: grayscale(1); }   /* (pas de filtre SVG chez eux) */
+html.flou-css .flou-1 .card .flou-v { opacity: .45; } html.flou-css .flou-2 .card .flou-v { opacity: .8; } html.flou-css .flou-3 .card .flou-v { opacity: 1; }
+/* le fil qui relie le tirage au disque */
+.card.au-centre { cursor: zoom-in; }
+.card:focus-visible, .cell:focus-visible, .cell:focus, .card:focus { outline: none; }   /* pas de bordure dorée après une sélection */
+/* (plus de halo doré autour d'une photo ajoutée) */
+
+/* visionneuse : l'image en volume, rien d'autre */
+.viewer { position: fixed; inset: 0; z-index: 30; background: none; }
+.viewer canvas { opacity: 0; transition: opacity .45s ease; }
+.viewer.on canvas { opacity: 1; }
+.viewer canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: default; touch-action: none; }
+.viewer canvas.prise { cursor: grab; }   /* la main seulement au-dessus de l'image */
+.viewer canvas.prise:active { cursor: grabbing; }
+.fallback { position: absolute; inset: 8vh 8vw; width: calc(100% - 16vw); height: calc(100% - 16vh); object-fit: contain; }
+/* (plus de overflow: hidden pendant la vue en volume : sur Safari, le fond disparaissait) */
+
+/* glisser-déposer */
+
+.status { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 45; margin: 0; font: 12px var(--mono); color: var(--or-clair); pointer-events: none; }
+.status:empty { display: none; }
+
+.foot { position: fixed; left: 0; right: 0; bottom: 0; z-index: 150; padding: 260px clamp(16px, 3vw, 36px) 14px; font: 400 11px var(--mono); letter-spacing: .05em; color: var(--signal-2);
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, .55) 35%, rgba(0, 0, 0, .9) 65%, #000 88%); pointer-events: none; }
+.foot a { color: var(--signal-2); pointer-events: auto; }
+
+/* réglages (temporaires, pour tester les rendus) */
+.settings-btn { display: none !important; }
+body.reglages .settings-btn { display: grid !important; }   /* touche R */
+.settings-btn { position: fixed; right: clamp(16px, 3vw, 36px); bottom: 16px; z-index: 160; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; cursor: pointer; }
+.settings-btn svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; }
+body.viewing .settings-btn { bottom: 70px; }
+.settings { position: fixed; right: 16px; bottom: 64px; z-index: 50; width: min(300px, calc(100vw - 32px)); max-height: calc(100vh - 140px); overflow: auto; padding: 16px;
+  background: rgba(10, 10, 9, .95); border: 1px solid var(--trait); font-size: 12.5px; }
+body.viewing .settings { bottom: 118px; max-height: calc(100vh - 200px); }
+.settings h2 { font: 400 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--signal-2); margin: 0 0 12px; }
+.settings h2 span { color: var(--alerte); margin-left: 6px; }
+.set-row { margin: 0 0 12px; }
+.set-row label { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; color: var(--signal-3); }
+.set-row output { font: 11px var(--mono); color: var(--or-clair); }
+.set-row input[type=range], .set-row select { grid-column: 1 / -1; width: 100%; accent-color: var(--or); }
+.set-row select { font: 12px var(--mono); color: var(--papier); background: var(--noir-3); border: 1px solid var(--trait); padding: 6px; }
+.set-row .ck { display: flex; gap: 8px; align-items: flex-start; }
+.set-row .ck input { accent-color: var(--or); margin-top: 2px; }
+.set-row button { font: 11px var(--mono); background: none; border: 1px solid var(--trait); color: var(--signal-3); padding: 6px 10px; cursor: pointer; }
+.set-row a { font: 11px var(--mono); margin-left: 10px; }
+
+@media (max-width: 640px) {
+  .grid { gap: 10px; --h: 130px; }
+  .brand .word { font-size: 16px; letter-spacing: .08em; }
+  .brand .sous-titre { font-size: 12px; letter-spacing: .1em; }
+  .add { padding: 0; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cell { opacity: 1; transform: none; transition: none; }
+  .disc-body { transition: none; }
+}
+
+/* ─── l'accueil : le recto du disque, qu'il faut survoler ─── */
+body.welcome .top, body.welcome .grid, body.welcome .stage, body.welcome .foot, body.welcome .settings-btn { opacity: 0; pointer-events: none; }
+.top, .grid, .stage, .foot, .settings-btn { transition: opacity 2.6s ease; }
+.welcome-layer { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; align-content: center; gap: 34px; }
+/* le disque d'or, immobile dans l'espace : pendant le voyage, il est placé par la même caméra que tout le reste (prelude.ts) */
+body.voyage .welcome-layer:not([style*="transform"]) { transform: translate(400vw, 0); }   /* (la position pendant le voyage est posée sur l'accueil lui-même, prelude.ts) */
+@media (prefers-reduced-motion: reduce) { .welcome-layer { animation: apparait 1s ease backwards; } }
+@keyframes apparait { from { opacity: 0; } }
+.w-disc { --spin: 0deg; --near: 0; position: relative; width: min(66vmin, 615px); aspect-ratio: 1; perspective: 1400px; scale: .244;   /* dessiné en grand (2,6×) puis réduit : toujours net, même quand il approche jusqu'à la taille du grand disque */ cursor: pointer; outline: none;
+  }
+.w-flip { position: absolute; inset: 0; transform-style: preserve-3d; }
+.w-face { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden; user-select: none;
+  transform: translateZ(calc(var(--ep) / 2)) rotate(var(--spin)); filter: saturate(.85); }
+.w-verso { transform: rotateX(180deg) translateZ(calc(var(--ep) / 2)) rotate(calc(-1 * var(--spin))) scale(1.016); clip-path: circle(49.2% at 50% 50%); }   /* (contour recentré sur le trou, comme le grand disque) */   /* le verso (face gravée) tourne dans le même sens que le grand disque de l'interface */
+/* l'épaisseur du disque : une pile de fines couches dorées entre les deux faces ; de face on ne la voit pas,
+   de biais et sur la tranche elle donne un vrai bord, un peu plus sombre et brossé sur le pourtour */
+.w-disc { --ep: 4.9px; }
+/* le disque en 3D (disque3d.ts) : dessiné sur un canevas plein écran ; l'élément .w-disc reste, invisible, pour le clic et le clavier */
+.w-trou { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.w-gl { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.welcome-layer.gl .w-flip { visibility: hidden; }   /* épaisseur, à l'échelle du dessin (2,6×) */
+.w-disc.de-face .w-ep:not(.m) { visibility: hidden; }   /* de face, les 12 autres couches de la tranche sont entièrement cachées : on ne les dessine pas */
+.w-ep { position: absolute; inset: .4%; border-radius: 50%; pointer-events: none;
+  /* la tranche : sombre, pas dorée — seuls des reflets clairs, qui glissent avec le mouvement du disque */
+  background:
+    radial-gradient(circle, #0c0b09 0 86%, transparent 86.6%),
+    linear-gradient(115deg, transparent 40%, rgba(235, 228, 210, .32) 50%, transparent 60%),
+    repeating-conic-gradient(from 0deg, rgba(220, 214, 200, .10) 0 .7deg, rgba(0, 0, 0, .3) .7deg 1.6deg, rgba(200, 195, 185, .06) 1.6deg 2.3deg),
+    radial-gradient(circle, #0e0d0b 0 88%, #1b1916 93%, #2c2925 96.5%, #1a1815 98.6%, #0a0908 100%); }
+.add.grave { color: var(--lumiere); text-shadow: var(--lueur); font-weight: 400; }
+
+.settings, .status { color: var(--lumiere); }
+
+/* les fils qui relient les images au disque gravé */
+.thread { position: absolute; left: 0; top: 0; width: 1px; height: 1000px; will-change: transform;   /* chaque fil : son propre petit calque (1 × 1000 px), déplacé par la carte graphique sans repeinture */
+  display: none; transform-origin: 0 0; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(200, 202, 206, .85), rgba(200, 202, 206, .3)); }   /* fils gris clair */
+.anchor { position: absolute; left: -2.5px; top: -2.5px; width: 5px; height: 5px; will-change: transform; display: none; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(200, 202, 206, .95), rgba(200, 202, 206, .4) 60%, rgba(200, 202, 206, 0)); }   /* points gris clair, comme les fils */
+
+/* pour le moment : pas de barre d'infos ni de dégradé en bas */
+.foot { display: none !important; }
+
+/* passage disque ⇄ grille : fondu lent */
+.grid, .stage { transition: opacity 1.4s ease; }
+.grid { transition: opacity .9s ease; }
+body.arrivee .stage { transition: none; }   /* le grand disque prend le relais de l'accueil sans fondu */
+/* bandeau du haut : dégradé noir deux fois plus haut */
+.top { background: none !important; z-index: 20; }
+/* le bandeau noir est sous les images du disque (elles passent devant), le logo et les boutons restent au-dessus */
+.top-fade { position: fixed; left: 0; right: 0; top: 0; height: 180px; z-index: 0; pointer-events: none;
+  background: linear-gradient(#000 40%, rgba(0, 0, 0, .75) 62%, rgba(0, 0, 0, 0)); transition: opacity 2.6s ease; }
+body.welcome .top-fade { opacity: 0; }
+body.welcome.prechauffe .stage { opacity: .01; }   /* préparée juste avant la fin de l'accueil : déjà dessinée quand elle apparaît */
+body:not(.vue-disque) .top-fade { z-index: 15; }   /* galerie : les images passent sous la barre noire du haut */
+.stage { z-index: 1; }
+
+
+/* accueil : le disque bascule vers nous sur place (pivot sur son point le plus bas) jusqu'à être
+   parfaitement à plat, perpendiculaire à l'écran ; il disparaît à cet instant précis */
+
+/* ─── débogage de l'animation d'accueil (?debug3d) ─── */
+.welcome-layer.debug .w-recto { outline: 5px solid #ff3b3b; outline-offset: -5px; }
+.welcome-layer.debug .w-verso { outline: 5px solid #2f7bff; outline-offset: -5px; }
+.welcome-layer.debug .w-ep { background: #39d353; opacity: .9; }                         /* l'épaisseur : vert */
+.dbg-face { position: absolute; inset: 0; border-radius: 50%; display: flex; justify-content: center; align-items: flex-start; padding-top: 9%; pointer-events: none;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.dbg-face span { padding: 6px 12px; font: 700 26px var(--mono); line-height: 1.1; text-align: center; color: #fff; }
+.dbg-face::before { content: ''; position: absolute; left: calc(50% - 11px); top: 1.5%; width: 22px; height: 22px; border-radius: 50%; background: #fff; }   /* repère : le haut de la face, il tourne avec elle */
+.dbg-recto { transform: translateZ(calc(var(--ep) / 2 + 2px)) rotate(var(--spin)); }
+.dbg-recto span { background: rgba(255, 59, 59, .85); }
+.dbg-verso { transform: rotateX(180deg) translateZ(calc(var(--ep) / 2 + 2px)) rotate(var(--spin)); }
+.dbg-verso span { background: rgba(47, 123, 255, .85); }
+.dbg-normal { position: absolute; left: calc(50% - 3px); top: 50%; width: 6px; height: 45%; background: #ffd400; transform-origin: 50% 0; transform: rotateX(-90deg); }   /* la normale du recto (jaune) */
+.dbg-axe { position: absolute; pointer-events: none; }
+.dbg-x { left: -15%; right: -15%; top: calc(50% - 2px); height: 4px; background: #ff3b3b; }    /* axe X (rouge) : l'axe du retournement */
+.dbg-y { top: -15%; bottom: -15%; left: calc(50% - 2px); width: 4px; background: #39d353; }     /* axe Y (vert) */
+.dbg-hud { position: fixed; left: 16px; top: 16px; z-index: 500; margin: 0; padding: 12px 14px; font: 13px/1.5 ui-monospace, monospace; color: #fff;
+  background: rgba(0, 0, 0, .75); border: 1px solid #444; white-space: pre; pointer-events: none; }
+
+/* arrivée du disque : il monte seul ; images, fils, titre, boutons apparaissent ensuite en fondu */
+body.montee .top, body.montee .top-fade, body.montee .settings-btn { opacity: 0 !important; transition: none !important; }   /* les images montent avec le disque ; la barre du haut vient juste après */
+/* à l'arrivée : le disque se met en place d'abord, les images viennent après. Le fondu se fait sur chaque image et chaque fil,
+   jamais sur leurs calques 3D (une opacité sur un calque 3D l'aplatit : les images apparaissaient couchées sur le disque) */
+.card, .thread, .anchor { transition: opacity 1.1s ease; }
+body.images-decalees :is(.card, .thread, .anchor) { transition-delay: var(--dl, 0s); }   /* à l'arrivée : les images apparaissent presque ensemble, chacune un peu décalée au hasard */
+body.sans-images .card, body.sans-images .thread, body.sans-images .anchor { opacity: 0; transition: none; }
+body.arrivee .top, body.arrivee .top-fade { transition: opacity 1.4s ease .2s; }
+
+/* ─── pré-accueil : un dossier d'archives plutôt qu'une page web ─────────────────────────────
+   Titre à la même place que dans l'interface (coin haut gauche, petit disque). À gauche le récit,
+   à droite quatre tirages en carré. Rien d'arrondi, pas d'ombre portée : des tirages, des légendes. */
+/* ─── pré-accueil ───
+   Une grille de 3 colonnes égales, même gouttière partout : le texte | le disque et le lancement | le point bleu pâle.
+   Le tout forme un rectangle plein : les colonnes ont la même hauteur, les images s'étirent pour finir sur la même ligne. */
+.prelude { --gout: clamp(20px, 2.2vw, 36px); position: fixed; inset: 0; z-index: 450; overflow: auto; display: flex; flex-direction: column; color: var(--lumiere); background: transparent; transition: opacity 1s ease; }   /* le fond spatial de l'interface, tel quel */
+.prelude.attente { opacity: 0; transition: none; }   /* tout apparaît ensemble (prelude.ts) */
+.prelude { transition: opacity 1.4s ease; }
+/* au chargement : aucune barre de défilement (la page derrière l'accueil est masquée, le pré-accueil défile seul
+   sur petit écran ; sur ordinateur il tient dans l'écran, sa barre reste cachée) */
+html:has(body.welcome), body.welcome { overflow: hidden; }
+@media (min-width: 901px) { .prelude { scrollbar-width: none; } .prelude::-webkit-scrollbar { display: none; } }
+.prelude.part { pointer-events: none; overflow: hidden; }   /* pendant le voyage : pas de barre de défilement (les éléments sortent de l'écran) */
+/* au contact : le voyage de la caméra (prelude.ts) place chaque élément image par image ; rien ne s'efface */
+.prelude.part .p-mod { will-change: transform; }
+@media (prefers-reduced-motion: reduce) { .prelude.part { opacity: 0; transition: opacity .15s; } }
+/* le rectangle au centre exact : au-dessus, un vide de la hauteur de la zone du bouton (--pied, mesurée dans prelude.ts) ;
+   le rectangle est réduit d'un bloc (zoom, calculé dans prelude.ts) pour tenir entre les deux */
+/* la Terre en bas de l'accueil (vidéo 2560 × 546, voir prelude.ts) : dans le fond, au-dessus des étoiles, sous le texte ;
+   ses bords se fondent dans le ciel */
+:root { --tw: 140vw; }   /* largeur de la bande de la Terre */
+@media (max-aspect-ratio: 4/5) { :root { --tw: 290vw; } }   /* téléphone en hauteur : la Terre bien plus grande, ses bords ne se voient jamais pendant le recul et la trajectoire */
+.terre-video { position: fixed; left: calc(50vw - var(--tw) / 2); bottom: calc(var(--tw) / 4.68 * -.43); width: var(--tw); height: calc(var(--tw) / 4.68); z-index: 1; pointer-events: none;   /* plus large que l'écran : au recul du décrochage, ses bords restent hors champ */
+  object-fit: cover; object-position: 50% 50%; opacity: .002;   /* plus de mélange « éclaircir » (lourd pour Safari) : autour de la Terre le ciel est déjà noir (.terre-nuit) */ transition: opacity 1.6s ease;   /* (jamais 0 : Safari arrête les vidéos qu'il juge invisibles) */   /* « éclaircir » : la Terre est opaque, seul le noir de l'espace laisse voir le ciel */
+  transform-origin: 50% calc(var(--tw) / 4.68 * .57 - 50vh); will-change: transform;   /* le centre de l’écran (en coordonnées de la bande) */
+  }
+.terre-video.vue { opacity: 1; }
+/* les fondus de la Terre (haut et côtés) : des dégradés noirs posés par-dessus — le ciel autour est noir (.terre-nuit) ;
+   bien plus léger qu'un masque sur une vidéo 4K (Safari recalculait le masque à chaque image) */
+.terre-fondu { position: fixed; left: calc(50vw - var(--tw) / 2); width: var(--tw); bottom: calc(var(--tw) / 4.68 * -.43); height: calc(var(--tw) / 4.68); z-index: 1; pointer-events: none;
+  transform-origin: 50% calc(var(--tw) / 4.68 * .57 - 50vh);
+  background: linear-gradient(to bottom, #000 0%, rgba(0,0,0,0) 16%), linear-gradient(to right, #000 4%, rgba(0,0,0,0) 20%, rgba(0,0,0,0) 80%, #000 96%); }
+.terre-video::-webkit-media-controls, .terre-video::-webkit-media-controls-start-playback-button, .terre-video::-webkit-media-controls-overlay-play-button { display: none !important; -webkit-appearance: none; opacity: 0; }   /* Safari : jamais de bouton lecture */
+.terre-video.vue.raccord { opacity: .002; }   /* la boucle repart : un fondu bref au lieu d'un saut */
+/* le noir autour de la Terre : le fond et les étoiles s'éteignent en approchant de sa courbe (même mouvement que la vidéo pendant le voyage) */
+.terre-nuit { position: fixed; left: calc(50vw - var(--tw) * .95); top: -30vh; width: calc(var(--tw) * 1.9);   /* assez large pour que son dégradé s'éteigne avant ses bords (sinon ses côtés sombres se voyaient au recul) */ height: 160vh; z-index: 1;   /* plus grand que l'écran : au recul et au roulis, son bord ne se voit jamais (sans être énorme : plus léger) */ pointer-events: none; transform-origin: 50% 50%;
+  background: radial-gradient(ellipse calc(var(--tw) * .857) calc(var(--tw) / 4.68 * 1.25) at 50% calc(130vh + var(--tw) / 4.68 * .28), #000 52%, rgba(0, 0, 0, .75) 68%, rgba(0, 0, 0, .3) 84%, transparent 100%); }
+@media (prefers-reduced-motion: reduce) { .terre-video, .terre-nuit, .terre-fondu { display: none; } }
+.prelude::before, .prelude::after { content: ''; flex: 1 0 0; min-height: 0; }   /* l'espace libre : 40 % au-dessus du bloc (rectangle + bouton), 60 % en dessous (la Terre, en bas) */
+.prelude::after { flex-grow: 1; }   /* tout le bloc (texte, images, bouton) centré verticalement */
+.p-corps { flex: none; width: 100%; max-width: 1440px; box-sizing: border-box; margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 64px);
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--gout); align-items: stretch; }
+/* le texte : récit en haut, appel en bas, aligné sur le bas des images */
+.p-recit { display: flex; flex-direction: column; }
+.p-titre { margin: -.14em 0 .55em; font: 400 clamp(40px, 4.4vw, 66px)/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--lumiere); }   /* même typo que les titres des images */
+.p-recit p { margin: 0 0 1.05em; font: 400 13px/1.6 var(--corps); letter-spacing: 0; color: #fff; }   /* même typo et taille que les légendes des photos, en plus blanc */
+.p-recit p.p-appel { margin: auto 0 0; }
+/* les images : deux colonnes de la même grille */
+/* les images : deux colonnes de la même grille, sur 4 lignes (image, légende, image, légende) ;
+   le point bleu pâle couvre les 3 premières : il finit sur la même ligne que le lancement, et sa légende commence avec la sienne */
+.p-ecrans { grid-column: 2 / 4; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1.35fr) auto;   /* la hauteur suit le texte ; le lancement a un peu plus de place (la fusée reste entière) */ column-gap: var(--gout); row-gap: 0; }
+.p-ecran { display: contents; }
+.p-e01 .p-tirage { grid-area: 1 / 1; } .p-e01 .p-legende { grid-area: 2 / 1; margin-bottom: var(--gout); }
+.p-e02 .p-tirage { grid-area: 3 / 1; } .p-e02 .p-legende { grid-area: 4 / 1; }
+/* le point bleu pâle : sa propre colonne (image puis légende), sur toute la hauteur ; c'est lui qui s'adapte,
+   la colonne de gauche (disque, lancement et leurs légendes) remplit toute la hauteur du rectangle */
+@media (min-width: 901px) {
+  .p-e03 { display: flex; flex-direction: column; grid-area: 1 / 2 / 5 / 3; min-height: 0; }
+  .p-e03 .p-tirage { flex: 1 1 0; min-height: 0; }
+}
+.p-ecran h2 { margin: 12px 0 6px; font: 400 18px/1.15 var(--mono); letter-spacing: .1em; -webkit-text-stroke: .35px currentColor; text-transform: uppercase; }
+.p-ecran p { margin: 0; font: 400 13px/1.6 var(--corps); letter-spacing: 0; color: rgba(255, 255, 255, .86); }
+/* textes justifiés, sans césure : les blocs sont nets ; la dernière ligne reste à gauche, et le navigateur
+   équilibre les lignes (pas de mot seul en fin de paragraphe) pour limiter les espaces entre les mots */
+.prelude .p-recit p { text-align: justify; text-align-last: left; hyphens: manual; -webkit-hyphens: manual; text-wrap: pretty; }
+/* le même tirage pour les trois : noir et blanc d'archive, grain ; la hauteur suit la grille */
+.p-tirage { position: relative; margin: 0; min-height: 150px; width: 100%; overflow: hidden; background: #0e0e0e; }
+.p-tirage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(1) contrast(1.06) var(--reglage,); }   /* comme PIA21740 */
+.p-large .p-tirage img { filter: var(--reglage, none); }
+.prelude.cuit .p-tirage img { filter: none; }   /* les images sont déjà réglées (tools/cuire-reglages.py) */   /* le point bleu pâle : l'image d'origine, mise en noir et blanc par ses réglages (reglages.ts) */
+.p-tirage img.absente { visibility: hidden; }
+.p-tirage::before { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: radial-gradient(120% 95% at 50% 45%, transparent 58%, rgba(0, 0, 0, .5) 100%); }
+.p-tirage::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1; opacity: .22; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"); }
+/* la Terre, annotée en or : un cercle autour du point, un trait incliné, le nom au bout, dans la typo du texte */
+.p-terre { --or-note: #fff; position: absolute; z-index: 2; width: 0; height: 0; pointer-events: none; filter: drop-shadow(0 0 3px rgba(0, 0, 0, .6)); }
+.p-terre i { position: absolute; left: -12px; top: -12px; width: 24px; height: 24px; box-sizing: border-box; border: 1px solid var(--or-note); border-radius: 50%; }
+.p-terre i::after { content: ''; position: absolute; right: 11.5px; top: 11.5px; width: 72px; height: 1px; transform-origin: 100% 50%; transform: rotate(30deg);
+  background: linear-gradient(90deg, var(--or-note) calc(100% - 12px), transparent calc(100% - 12px)); }   /* part du bord du cercle, monte vers la gauche */
+.p-terre b { position: absolute; right: 62px; bottom: 38px; white-space: nowrap; font: 400 13px/1.6 var(--corps); letter-spacing: 0; color: var(--or-note); }
+/* le bouton : sous le rectangle, au centre ; le texte puis l'icône du signal en dessous */
+.p-pied { flex: none; display: flex; justify-content: center; padding: clamp(8px, 1.8vh, 20px) 16px 0; }   /* sous le rectangle ; l'ensemble (rectangle + bouton) est centré dans la page */
+.p-ecouter { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 0; background: none; border: 0; color: var(--lumiere); cursor: pointer;
+  font: 16px var(--mono); letter-spacing: .14em; text-transform: uppercase; -webkit-text-stroke: .3px var(--lumiere); }
+.p-ecouter span { order: -1; }
+.p-ecouter .p-conseil { position: relative; order: -2; margin: 0 0 max(3px, calc(4.5px * var(--z, 1))); top: 0;   /* (un écart minimum, quelle que soit la taille de l’écran) */ font: italic 400 calc(9.5px * var(--z, 1))/1.6 var(--corps); letter-spacing: 0; text-transform: none; transform: skewX(-9deg); -webkit-text-stroke: 0; color: #fff; }   /* « (son recommandé) », juste au-dessus du texte */
+.p-conseil i { font-style: inherit; animation: conseil 4.2s ease-in-out infinite; }   /* il apparaît et disparaît lentement, en continu (indépendant du survol) */
+@keyframes conseil { 0%, 12%, 100% { opacity: 0; } 50%, 62% { opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { .p-conseil i { animation: none; opacity: .4; } }
+.p-ecouter:focus-visible { outline: none; }
+.p-ecouter svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: .95; transition: transform .45s cubic-bezier(.2, .8, .2, 1), stroke .35s ease, filter .35s ease; }
+.p-ecouter { scale: 1.3; transform-origin: 50% 0; }   /* « Établir le contact », l'icône et le conseil, plus grands (vers le bas) */
+.p-ecouter .onde { animation: onde 2.8s ease-in-out infinite; }
+.p-ecouter .onde.o2 { animation-delay: .45s; }
+/* au survol : l'icône grossit, passe à l'or, et le signal s'accélère */
+.p-ecouter:hover svg, .p-ecouter:focus-visible svg { transform: scale(1.4); filter: drop-shadow(0 0 4px rgba(255, 255, 255, .35)); }   /* au survol : l'icône grandit, reste blanche (pas de jaune) */
+.p-ecouter:hover .onde, .p-ecouter:focus-visible .onde { animation-duration: 1.1s; }
+.p-ecouter:hover .onde.o2, .p-ecouter:focus-visible .onde.o2 { animation-delay: .18s; }
+@keyframes onde { 0%, 100% { opacity: .18; } 45% { opacity: 1; } }   /* le signal part, par vagues */
+@media (prefers-reduced-motion: reduce) { .p-ecouter .onde { animation: none; } }
+/* écran étroit : une colonne, les images à leurs proportions */
+@media (max-width: 560px) { .add-long { display: none; } }   /* téléphone : « Ajouter » seul, l'en-tête tient sur une ligne */
+@media (max-width: 900px) {
+  .p-corps { grid-template-columns: 1fr; min-height: 0; row-gap: 40px; padding-top: 56px; padding-bottom: 24px; }
+  .p-ecrans { grid-column: 1; display: flex; flex-direction: column; gap: 0; }
+  .p-tirage { aspect-ratio: 3 / 2; }
+  .p-large .p-tirage { aspect-ratio: 453 / 614; }
+  .p-legende { margin-bottom: 32px; }
+  .p-recit p.p-appel { margin-top: 1.8em; }
+}
+
+/* l'invitation à tourner le disque (carousel.ts) : un arc fléché et une phrase, posés sur le disque, jusqu'au premier geste */
+.tourner-indice { position: fixed; left: 50%; bottom: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 14px 40px calc(16px + env(safe-area-inset-bottom, 0px)); background: radial-gradient(closest-side, rgba(0, 0, 0, .55), rgba(0, 0, 0, 0)); pointer-events: none;   /* (une ombre douce, pas de cadre) */
+  color: #fff; font: 400 11px/1 var(--corps); letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; text-shadow: 0 0 10px #000, 0 0 3px #000;
+  opacity: 0; transform: translate(-50%, 6px); transition: opacity .9s ease, transform .9s ease; }   /* même style que « Lire la suite » */
+.tourner-indice.on { opacity: 1; transform: translate(-50%, 0); }
+.tourner-indice svg { width: 112px; height: 24px; overflow: visible; fill: none; stroke: #fff; stroke-width: .9; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 3px rgba(0, 0, 0, .9)); }
+.tourner-indice .arc { stroke-opacity: 1; }
+.tourner-indice .pointe { stroke-opacity: 1; }
+.tourner-indice .bille { fill: #fff; stroke: none; }   /* (elle parcourt l'arc à chaque poussée du disque : animation SVG, lancée par carousel.ts) */
+@media (max-width: 560px) { .tourner-indice { font-size: 10px; letter-spacing: .12em; } }
+
+/* ─── le pré-accueil en récit (prelude.ts) : une histoire qui défile, en grand, chapitre par chapitre ───
+   Texte aligné à gauche (plus de justification), corps confortable, une photo par chapitre à ses vraies proportions. */
+.prelude.recit-long { display: block; scroll-behavior: auto; }
+.prelude.recit-long::before, .prelude.recit-long::after { display: none; }
+.p-long { --marge: clamp(20px, 6vw, 110px); position: relative; max-width: 1500px; margin: 0 auto; padding: 0 var(--marge); box-sizing: border-box; }
+.p-long p { text-align: left; hyphens: manual; -webkit-hyphens: manual; text-wrap: pretty; }
+/* l'ouverture : le titre et la première phrase, sur tout l'écran */
+.p-ouverture { min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 10vh 0 16vh; box-sizing: border-box; }
+.recit-long .p-titre { margin: 0 0 .5em; font-size: clamp(48px, 7.5vw, 120px); line-height: .92; }
+.p-chapeau { margin: 0 auto; max-width: 36ch; font: 400 clamp(17px, 1.55vw, 23px)/1.55 var(--corps); letter-spacing: 0; color: #fff; }
+.p-defiler { align-self: center; display: inline-flex; flex-direction: column; align-items: center; gap: 12px; margin-top: clamp(90px, 20vh, 230px); padding: 0; background: none; border: 0; cursor: pointer;
+  color: rgba(255, 255, 255, .62); font: 400 12px/1 var(--corps); letter-spacing: .14em; text-transform: uppercase; transition: color .3s ease; }
+.p-defiler:hover, .p-defiler:focus-visible { color: #fff; }
+.p-defiler i { position: relative; width: 1px; height: 46px; overflow: hidden; background: rgba(255, 255, 255, .18); }
+.p-defiler i::after { content: ''; position: absolute; left: 0; top: -40%; width: 1px; height: 40%; background: #fff; animation: defiler 2.4s cubic-bezier(.6, 0, .3, 1) infinite; }
+@keyframes defiler { to { top: 100%; } }
+/* un chapitre : la photo d'un côté, le texte de l'autre (en alternance) */
+.p-chap { min-height: 92vh; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(20px, 3vw, 56px); align-items: center; padding: 10vh 0; box-sizing: border-box; }
+.p-chap .p-tirage { grid-column: 1 / 8; grid-row: 1; justify-self: center; width: auto; height: auto; max-width: 100%; max-height: 74vh; min-height: 0; }
+.p-chap .p-tirage { width: min(100%, calc(74vh * var(--r, 1))); }
+.p-chap .p-texte { grid-column: 8 / 13; grid-row: 1; }
+.p-chap.p-inverse .p-tirage { grid-column: 6 / 13; } .p-chap.p-inverse .p-texte { grid-column: 1 / 6; }
+.p-chap.p-seul .p-texte { grid-column: 3 / 11; text-align: center; }
+.p-chap.p-seul .p-texte p { margin-left: auto; margin-right: auto; text-align: center; }
+.p-ouverture .p-chapeau { text-align: center; }
+.p-date { margin: 0 0 1.1em; font: 400 12px/1 var(--corps); letter-spacing: .16em; text-transform: uppercase; color: rgba(255, 255, 255, .55); }
+.p-texte h2 { margin: 0 0 .7em; font: 400 clamp(21px, 2vw, 32px)/1.1 var(--mono); letter-spacing: .06em; -webkit-text-stroke: .35px currentColor; text-transform: uppercase; color: var(--lumiere); }
+.p-texte p:not(.p-date) { margin: 0 0 1em; max-width: 40ch; font: 400 clamp(15px, 1.12vw, 17.5px)/1.62 var(--corps); letter-spacing: 0; color: rgba(255, 255, 255, .9); }
+.p-chap.p-seul .p-texte p:not(.p-date) { max-width: 44ch; font-size: clamp(16.5px, 1.4vw, 21px); line-height: 1.58; color: #fff; }
+/* la fin : l'appel, puis le bouton, juste au-dessus de la Terre */
+/* au bout du défilement : l'appel au centre exact de l'écran, le bouton plus bas, juste au-dessus de la Terre */
+.p-fin { position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; text-align: center; }
+.p-appel { margin: 0 auto clamp(30px, 6vh, 60px); max-width: 40ch; font: 400 clamp(16.5px, 1.45vw, 22px)/1.58 var(--corps); color: #fff; }
+.p-long .p-appel { text-align: center; }
+.recit-long .p-pied { padding: 0; position: absolute; left: 0; right: 0; bottom: calc(var(--tw) / 4.68 * .21 + 1.5vh + 14px); }
+.recit-long .p-appel { margin-bottom: 0; }
+/* chaque chapitre arrive doucement à l'écran (une seule fois) */
+.recit-long .p-chap .p-mod, .recit-long .p-fin .p-mod { opacity: 0; transition: opacity 1.1s ease; }
+.recit-long .p-chap .p-texte { transition-delay: .15s; }
+.recit-long .lu .p-mod { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .recit-long .p-mod { opacity: 1 !important; translate: none !important; transition: none; } .p-defiler i::after { animation: none; } }
+/* écran étroit : une colonne, la photo puis son texte */
+@media (max-width: 900px) {
+  .p-chap { display: block; min-height: 0; padding: 9vh 0; }
+  .p-chap .p-tirage, .p-chap.p-inverse .p-tirage { width: min(100%, calc(62vh * var(--r, 1))); max-height: none; margin: 0 auto 28px; }
+  .p-texte p:not(.p-date) { max-width: none; }
+  .p-ouverture { padding: 10vh 0 22vh; }
+}
+
+
+/* un seul style de texte courant pour tout le récit (légendes des photos, ouverture, 2017, appel) : celui des légendes,
+   un peu agrandi vers celui des grands paragraphes (entre les deux, plus proche du plus petit) */
+.recit-long .p-chapeau, .recit-long .p-texte p:not(.p-date), .recit-long .p-chap.p-seul .p-texte p:not(.p-date), .recit-long .p-appel {
+  font: 400 clamp(15px, 1.12vw, 17.5px)/1.62 var(--corps); letter-spacing: 0; color: rgba(255, 255, 255, .9); }   /* (la taille des légendes des photos, partout) */
+
+
+/* « Lire la suite » : exactement à la place de « Établir le contact » (juste au-dessus de la Terre) */
+.p-ouverture { position: relative; }
+.p-ouverture .p-defiler { position: absolute; left: 0; right: 0; width: fit-content; margin: 0 auto; bottom: calc(var(--tw) / 4.68 * .21 + 1.5vh - 8px); }   /* (bas aligné sur celui de « Établir le contact » et de son icône) */
+
+/* clavier : un repère visible sur ce qui a le focus (jamais à la souris), en or discret */
+:is(a, button, [tabindex]):not(.w-disc):focus-visible { outline: 1px solid rgba(240, 189, 82, .85) !important; outline-offset: 4px; }
+
+/* panneau de réglage des images (touche R, voir reglages.ts) */
+.rg-panneau { position: fixed; top: 16px; right: 16px; z-index: 600; width: 272px; box-sizing: border-box; padding: 14px 16px 12px;
+  background: rgba(12, 12, 12, .94); border: 1px solid rgba(255, 255, 255, .14); border-radius: 10px; color: #fff; font: 400 12px/1.4 var(--corps);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); pointer-events: auto; }
+.rg-panneau button { font: inherit; color: inherit; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .14); border-radius: 6px; padding: 5px 8px; cursor: pointer; }
+.rg-panneau button:hover { background: rgba(255, 255, 255, .12); }
+.rg-tete { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .12em; }
+.rg-tete .rg-fermer { border: 0; background: none; font-size: 18px; line-height: 1; padding: 0 2px; }
+.rg-choix { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+.rg-choix button.actif { background: #fff; color: #0a0a0a; }
+.rg-ligne { display: grid; grid-template-columns: 96px 1fr 34px; align-items: center; gap: 8px; margin: 6px 0; }
+.rg-ligne input { width: 100%; accent-color: #fff; }
+.rg-ligne output { text-align: right; font-variant-numeric: tabular-nums; color: rgba(255, 255, 255, .7); }
+.rg-bas { display: flex; gap: 6px; margin-top: 12px; } .rg-bas button { flex: 1; }
+.rg-aide { margin: 10px 0 0; color: rgba(255, 255, 255, .5); font-size: 11px; }
+.p-tirage.rg-cible { outline: 1px solid rgba(255, 255, 255, .6); outline-offset: 3px; }
+/* téléphone : l'en-tête tient sur une ligne (titre sur une ligne, boutons en icônes + « Ajouter ») */
+@media (max-width: 560px) {
+  .top { gap: 10px; }
+  .top .brand .word { font-size: 15px; white-space: nowrap; letter-spacing: .06em; }
+  .top .brand .disc { width: 40px; height: 40px; }
+  .top .brand .titres { gap: 4px; }
+  .top .vue-lbl { display: none; }
+  .top-actions { gap: 16px; height: 40px; transform: translateY(-6px); }
+  /* boutons proportionnés à l'écran : icône galerie et « + Ajouter » plus petits, alignés sur la hauteur du titre */
+  .vue-btn { height: 34px; } .vue-btn svg { width: 22px; height: 22px; stroke-width: 1.1; }
+  .add { height: 34px; gap: 6px; font-size: 11.5px; letter-spacing: .1em; -webkit-text-stroke: .2px var(--lumiere); }
+  .add::before { font-size: 21px; -webkit-text-stroke: .7px currentColor; }
+}
+/* ─── outil de rognage (mode test : ?debug, touche C ; rognage.ts) ─── */
+.rgn-bandeau { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 900; padding: 8px 14px; border-radius: 6px;
+  background: rgba(0, 0, 0, .85); box-shadow: 0 0 0 1px rgba(255, 255, 255, .25); color: #fff; font: 12px/1.4 var(--mono); }
+.rgn-bandeau button { margin-left: 10px; font: 12px var(--mono); color: #000; background: #fff; border: 0; border-radius: 3px; padding: 4px 8px; cursor: pointer; }
+.rgn-bandeau button:disabled { opacity: .35; cursor: default; }
+body.mode-rognage .cell { outline: 1px dashed rgba(255, 255, 255, .35); outline-offset: -1px; cursor: crosshair; }
+.rgn-edit { position: fixed; inset: 0; z-index: 950; background: rgba(0, 0, 0, .94); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.rgn-zone { position: relative; touch-action: none; user-select: none; cursor: crosshair; line-height: 0; }
+.rgn-zone img { display: block; }   /* (taille donnée par rognage.ts : l'image en grand, entière) */
+.rgn-voile { position: absolute; inset: 0; background: rgba(0, 0, 0, .62); pointer-events: none; }
+.rgn-cadre { position: absolute; box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, .6); cursor: move; }
+.rgn-cadre::before, .rgn-cadre::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to right, transparent 33.2%, rgba(255,255,255,.35) 33.3%, transparent 33.4%, transparent 66.6%, rgba(255,255,255,.35) 66.7%, transparent 66.8%); }
+.rgn-cadre::after { background: linear-gradient(to bottom, transparent 33.2%, rgba(255,255,255,.35) 33.3%, transparent 33.4%, transparent 66.6%, rgba(255,255,255,.35) 66.7%, transparent 66.8%); }
+.rgn-cadre i { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; background: #fff; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,.6); }
+.rgn-cadre i[data-h="nw"] { left: 0; top: 0; cursor: nwse-resize; } .rgn-cadre i[data-h="n"] { left: 50%; top: 0; cursor: ns-resize; }
+.rgn-cadre i[data-h="ne"] { left: 100%; top: 0; cursor: nesw-resize; } .rgn-cadre i[data-h="e"] { left: 100%; top: 50%; cursor: ew-resize; }
+.rgn-cadre i[data-h="se"] { left: 100%; top: 100%; cursor: nwse-resize; } .rgn-cadre i[data-h="s"] { left: 50%; top: 100%; cursor: ns-resize; }
+.rgn-cadre i[data-h="sw"] { left: 0; top: 100%; cursor: nesw-resize; } .rgn-cadre i[data-h="w"] { left: 0; top: 50%; cursor: ew-resize; }
+.rgn-aide { margin: 0; color: rgba(255, 255, 255, .8); font: 12px/1.5 var(--mono); text-align: center; max-width: 90vw; }
