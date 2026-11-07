@@ -102,6 +102,7 @@ export function prelude(): Promise<void> {
     const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const etapes = () => {
       const Hv = root.clientHeight, max = root.scrollHeight - Hv, pts: number[] = [];
+      if (Hv <= 0) return [root.scrollTop];   // récit déjà caché (hauteur nulle) : rien à calculer, sinon la boucle ne finit jamais
       for (const el of root.querySelectorAll<HTMLElement>('.p-ouverture, .p-chap, .p-fin')) {
         const h = el.offsetHeight, top = el.offsetTop;
         if (h <= Hv * 0.92 || el.classList.contains('p-fin') || el.classList.contains('p-ouverture')) { pts.push(top + h / 2 - Hv / 2); continue; }
