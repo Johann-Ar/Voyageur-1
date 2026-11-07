@@ -4,5 +4,3 @@ dist/
 .DS_Store
 # extraits du signal (72 Mo), regénérables avec python3 tools/preparer-medias.py
 public/signal/
-# sons du disque : volontairement absents (site muet, voir README)
-public/audio/

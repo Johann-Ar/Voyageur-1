@@ -40,3 +40,6 @@ Le rendu en splats gaussiens est un moteur WebGL 2 écrit pour ce projet, sans b
 
 ## Texture or brossé
 - `public/disque/matiere-or.jpg` : texture fournie par l'utilisateur — source et licence : a_verifier
+
+## Sons du Voyager Golden Record
+- `public/audio/` (salutations, chant des baleines, musiques) : source et licences à vérifier (une partie des musiques est encore sous droits).

@@ -11,7 +11,7 @@
  * - Traitement « vieux, lointain » : bande étroite (étouffé), légère saturation, pleurage (le disque
  *   ondule), craquements et souffle du vinyle, longue réverbération froide (l'espace).
  *
- * Les fichiers (absents de cette version muette) : public/audio/index.json → { "salutations": ["salutations/x.mp3", …], "baleines": "baleines.mp3", "musiques": […] }
+ * Les fichiers : public/audio/index.json → { "salutations": ["salutations/x.mp3", …], "baleines": "baleines.mp3", "musiques": […] }
  * (chemins relatifs à /audio/). Sans fichiers, des sons de test synthétiques remplacent les vrais.
  *
  * Les navigateurs n'autorisent le son qu'après un geste (clic, touche, toucher) : la platine démarre
@@ -19,10 +19,6 @@
  */
 import { rendreDetachement } from './detachement.ts';
 import { donnee, fichier } from './res.ts';
-
-/** Le site est muet : aucun contexte audio n'est créé, rien n'est chargé ni joué. Passer à `true` pour rétablir le son
- *  (il faut alors remettre les fichiers dans public/audio/, voir README). */
-const SON = false;
 type Bin = 'salutations' | 'musiques';
 const BONJOURS = 2;   // nombre de bonjours (langues différentes, au hasard) avant les baleines
 
@@ -77,7 +73,7 @@ class Platine {
   private speedSrc: unknown = null;
   private premier = true;                          // le tout premier son (après « Consulter Voyageur 1 ») arrive en fondu, doucement
   constructor() {
-    if (SON) donnee<Record<string, unknown> | null>('audio/index.json', null).then((j) => {
+    donnee<Record<string, unknown> | null>('audio/index.json', null).then((j) => {
       if (j && typeof j === 'object') {
         for (const b of ['salutations', 'musiques'] as Bin[]) if (Array.isArray(j[b])) this.bins[b] = j[b].map(String);
         this.bags.musiques = [];
@@ -200,7 +196,6 @@ class Platine {
 
   // ─── interne ──────────────────────────────────────────────────────────────
   private start() {
-    if (!SON) return;
     if (!this.ctx) {
       const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AC) return;
@@ -237,7 +232,7 @@ class Platine {
    * Le contexte reste suspendu (et muet) jusqu'au clic.
    */
   preparer() {
-    if (!SON || this.ctx) return;
+    if (this.ctx) return;
     const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AC) return;
     try { this.ctx = new AC(); this.build(); } catch { this.ctx = null; return; }

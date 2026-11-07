@@ -14,7 +14,7 @@ Le site raconte cette histoire, puis fait découvrir chaque image **en volume** 
 4. **La galerie** : toutes les images en grille (bouton en haut à droite).
 5. **L’image en volume** : glisser pour tourner autour, ← → pour passer à la suivante, Échap pour fermer.
 
-Le site est **muet** : aucun son n’est chargé ni joué.
+Le son accompagne tout le parcours : les salutations, le chant des baleines puis les musiques du disque, passés par un traitement « platine » (souffle, craquements). Le premier clic sur « Établir le contact » autorise le son.
 
 ## Lancer le projet
 
@@ -52,7 +52,7 @@ Un déploiement **GitHub Pages** est prêt (`.github/workflows/pages.yml`) : dan
 ├─ src/scene/        splats gaussiens, tri, WebGL
 ├─ src/chain/        simulation du signal (encodage, canal, décodage)
 ├─ src/calibration/  page et outils de calibration
-├─ public/           images décodées, vignettes, photos d’archives, disque, polices
+├─ public/           images décodées, vignettes, sons, photos d’archives, disque, polices
 ├─ presets/ · tests/ · tools/
 ```
 
@@ -61,4 +61,4 @@ Un déploiement **GitHub Pages** est prêt (`.github/workflows/pages.yml`) : dan
 Voir [`CREDITS.md`](CREDITS.md). Images du disque : NASA / JPL ; décodage : Ron Barry (2017) ; photos d’archives : NASA / JPL-Caltech, NASA / KSC.
 Projet indépendant de présentation, ni produit ni approuvé par la NASA.
 
-**Avant une diffusion publique** : les polices *TRIAL-Vargas* et *Bagerich* sont des versions d’essai/démo (licences à acheter ou polices à remplacer), et plusieurs crédits d’images restent à vérifier (`public/data/archives.json`, `CREDITS.md`).
+**Avant une diffusion publique** : les polices *TRIAL-Vargas* et *Bagerich* sont des versions d’essai/démo (licences à acheter ou polices à remplacer), une partie des musiques du disque est encore sous droits, et plusieurs crédits d’images restent à vérifier (`public/data/archives.json`, `CREDITS.md`).

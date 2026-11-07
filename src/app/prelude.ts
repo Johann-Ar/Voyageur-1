@@ -37,7 +37,7 @@ const DECODAGE = [
   'En 2017, Ron Barry a décodé ce signal à partir d’une copie restée sur Terre. Les images qu’il en a fait ressortir gardent leurs défauts : des stries, des trames et des pertes, traces de leur passage par le son.',
   'Ici, chacune est traduite en volume, pour devenir un objet que l’on peut approcher, tourner et regarder autrement.',
 ];
-const APPEL = 'Voyager 1 ne reviendra pas. Mais ce qu’elle emporte peut encore nous parvenir. Reprenez contact avec elle et redécouvrez son message sous une forme nouvelle : ses 116 images, décodées du signal gravé dans le sillon.';
+const APPEL = 'Voyager 1 ne reviendra pas. Mais ce qu’elle emporte peut encore nous parvenir. Reprenez contact avec elle et redécouvrez son message sous une forme nouvelle : ses 116 images, des salutations en 55 langues, les sons de la Terre et sa musique.';
 const BOUTON = 'Établir le contact';
 
 /** Mode test (?debug) : les images d'origine et leurs réglages en direct (panneau R). Sinon : les images déjà réglées (tools/cuire-reglages.py). */
@@ -77,7 +77,7 @@ export function prelude(): Promise<void> {
         </section>
         <section class="p-fin">
           <p class="p-appel p-mod">${APPEL}</p>
-          <div class="p-pied p-mod"><button class="p-ecouter grave" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.3"/><path class="onde" d="M8.8 8.8a4.5 4.5 0 0 0 0 6.4M15.2 8.8a4.5 4.5 0 0 1 0 6.4"/><path class="onde o2" d="M6 6a8.5 8.5 0 0 0 0 12M18 6a8.5 8.5 0 0 1 0 12"/></svg><span>${BOUTON}</span></button></div>
+          <div class="p-pied p-mod"><button class="p-ecouter grave" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.3"/><path class="onde" d="M8.8 8.8a4.5 4.5 0 0 0 0 6.4M15.2 8.8a4.5 4.5 0 0 1 0 6.4"/><path class="onde o2" d="M6 6a8.5 8.5 0 0 0 0 12M18 6a8.5 8.5 0 0 1 0 12"/></svg><small class="p-conseil" data-t="(son recommandé)"><i>(son recommandé)</i></small><span>${BOUTON}</span></button></div>
         </section>
       </div>`;
     // « Lire la suite » : descend en douceur jusqu'au premier chapitre
