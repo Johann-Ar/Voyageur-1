@@ -6,6 +6,7 @@
  * Tout est en CSS 3D (perspective + preserve-3d) : pas de WebGL, léger, net.
  */
 import { urlLisible } from './res.ts';
+import { t } from './i18n.ts';
 import { platine } from './audio.ts';
 import { creerTrouFace, type TrouFace } from './trou.ts';
 
@@ -260,7 +261,7 @@ export class DiscCarousel {
       const el = document.createElement('div'); el.className = 'tourner-indice'; el.setAttribute('aria-hidden', 'true');
       // un arc fin qui suit le bord du disque (bombé vers le haut) et une pointe dans le sens où il tourne (vers la droite)
       el.innerHTML = `<svg viewBox="0 0 140 30"><path class="arc" d="M10 26 Q70 -2 130 26"/><path class="pointe" d="M124.8 18.6 L130 26 L121 26.8"/><circle class="bille" r="1.8" opacity="0"><animateMotion dur="1.6s" begin="indefinite" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines=".25 .1 .25 1" path="M10 26 Q70 -2 130 26"/><animate attributeName="opacity" dur="1.6s" begin="indefinite" fill="freeze" values="0;1;1;0" keyTimes="0;.12;.85;1"/></circle></svg>
-        <span>${tactile ? 'Glissez pour tourner le disque' : 'Faites défiler ou glissez pour tourner le disque'}</span>`;
+        <span>${tactile ? t({ en: 'Drag to turn the record', fr: 'Glissez pour tourner le disque' }) : t({ en: 'Scroll or drag to turn the record', fr: 'Faites défiler ou glissez pour tourner le disque' })}</span>`;
       document.body.append(el); this.indice = el;
       this.prochainElan = now + 1200;
     }

@@ -11,6 +11,7 @@
  * `spinNear` donne la même réaction au curseur au petit disque du logo (immobile au repos, sans entrée).
  */
 import { chemin } from './res.ts';
+import { t } from './i18n.ts';
 import { platine } from './audio.ts';
 import { camera, lentille } from './space.ts';
 import { creerTrou, type Trou } from './trou.ts';
@@ -90,7 +91,7 @@ export function welcome(): Promise<void> {
     const root = document.createElement('div');
     root.className = 'welcome-layer';
     root.innerHTML = `
-      <div class="w-disc" role="button" tabindex="0" aria-label="Entrer">
+      <div class="w-disc" role="button" tabindex="0" aria-label="${t({ en: 'Enter', fr: 'Entrer' })}">
         <div class="w-flip">
           <img class="w-face w-recto" src="${chemin('disque/recto-doux.webp')}" alt="" draggable="false" />
           <img class="w-face w-verso" src="${chemin('disque/verso-disque.jpg')}" alt="" draggable="false" />

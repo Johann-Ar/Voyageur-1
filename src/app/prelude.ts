@@ -5,20 +5,24 @@
  * Les photos sont des fichiers du projet (public/prelude/) : tout marche hors ligne.
  */
 import { chemin } from './res.ts';
+import { t, boutonLangue } from './i18n.ts';
 import { reglages } from './reglages.ts';
 import { platine } from './audio.ts';
 import { camera, type Pose } from './space.ts';
 // l'ordre : le disque posé sur la sonde, le lancement, la sonde jusqu'à l'espace interstellaire
 // (credit : gardé pour la traçabilité, plus affiché)
 const ECRANS = [
-  { n: '01', ratio: '1554 / 1227', coupe: [2.6, 3.0, 0.3, 0.5], titre: 'Le disque d’or, fixation sur la coque', img: 'prelude/01-disque.jpg', cuit: 'prelude/01-disque-regle.jpg', pos: '58% 55%',
-    texte: 'Sur son flanc, la sonde porte le Golden Record, une bouteille à la mer cosmique contenant les sons et les images de notre monde.',
+  { n: '01', ratio: '1554 / 1227', coupe: [2.6, 3.0, 0.3, 0.5], titre: t({ en: 'The Golden Record, mounted on the hull', fr: 'Le disque d’or, fixation sur la coque' }), img: 'prelude/01-disque.jpg', cuit: 'prelude/01-disque-regle.jpg', pos: '58% 55%',
+    texte: t({ en: 'On its side, the probe carries the Golden Record, a cosmic message in a bottle holding the sounds and images of our world.',
+      fr: 'Sur son flanc, la sonde porte le Golden Record, une bouteille à la mer cosmique contenant les sons et les images de notre monde.' }),
     credit: 'PIA21740 · NASA/JPL-Caltech · 1977' },
-  { n: '02', ratio: '1256 / 1600', titre: 'Le lancement, depuis Cap Canaveral', img: 'prelude/02-lancement.jpg', cuit: 'prelude/02-lancement-regle.jpg', pos: '50% 22%',
-    texte: 'Le 5 septembre 1977, la fusée Titan-Centaur s’arrache à la Terre, emportant avec elle notre message vers les étoiles.',
+  { n: '02', ratio: '1256 / 1600', titre: t({ en: 'The launch, from Cape Canaveral', fr: 'Le lancement, depuis Cap Canaveral' }), img: 'prelude/02-lancement.jpg', cuit: 'prelude/02-lancement-regle.jpg', pos: '50% 22%',
+    texte: t({ en: 'On 5 September 1977, the Titan-Centaur rocket tears itself away from Earth, carrying our message towards the stars.',
+      fr: 'Le 5 septembre 1977, la fusée Titan-Centaur s’arrache à la Terre, emportant avec elle notre message vers les étoiles.' }),
     credit: 'PIA17464 · NASA/KSC · 5.09.1977' },
-  { n: '03', ratio: '453 / 614', titre: 'La sonde, jusqu’à l’espace interstellaire', img: 'prelude/03-point-bleu.png', cuit: 'prelude/03-point-bleu-regle.png', terre: true,
-    texte: 'Le 14 février 1990, à environ 6 milliards de kilomètres, Voyager 1 se retourne et photographie la Terre : un point bleu pâle.',
+  { n: '03', ratio: '453 / 614', titre: t({ en: 'The probe, all the way to interstellar space', fr: 'La sonde, jusqu’à l’espace interstellaire' }), img: 'prelude/03-point-bleu.png', cuit: 'prelude/03-point-bleu-regle.png', terre: true,
+    texte: t({ en: 'On 14 February 1990, some 6 billion kilometres away, Voyager 1 turns around and photographs Earth: a pale blue dot.',
+      fr: 'Le 14 février 1990, à environ 6 milliards de kilomètres, Voyager 1 se retourne et photographie la Terre : un point bleu pâle.' }),
     credit: 'PIA00452 · NASA/JPL · 14.02.1990' },
 ];
 // la Terre dans PIA00452 (453×614), en % de l'image : le pixel le plus clair, en (344, 344)
@@ -28,17 +32,28 @@ const TERRE = { x: 75.9, y: 56 };
  * Le récit, en chapitres qui défilent (texte de Johann, mots inchangés, seulement réparti au fil de l'histoire) :
  * l'ouverture, les trois photos d'archives (chacune avec sa date), le décodage, puis l'appel et le bouton.
  */
-const OUVERTURE = 'En 1977, deux sondes Voyager quittent la Terre. Chacune emporte un disque d’or : des images, des voix, des sons et de la musique.';
+const OUVERTURE = t({ en: 'In 1977, two Voyager probes leave Earth. Each one carries a golden record: images, voices, sounds and music.',
+  fr: 'En 1977, deux sondes Voyager quittent la Terre. Chacune emporte un disque d’or : des images, des voix, des sons et de la musique.' });
 const SUITE: Record<string, string> = {   // le texte qui prolonge la légende de chaque photo
-  '01': 'Les images que vous allez découvrir ne sont pas des photographies imprimées. Elles sont gravées dans le sillon du disque, sous la forme d’un signal sonore.',
+  '01': t({ en: 'The images you are about to discover are not printed photographs. They are engraved in the groove of the record, in the form of a sound signal.',
+    fr: 'Les images que vous allez découvrir ne sont pas des photographies imprimées. Elles sont gravées dans le sillon du disque, sous la forme d’un signal sonore.' }),
 };
-const DATES: Record<string, string> = { '01': '1977', '02': '5 septembre 1977', '03': '14 février 1990' };
-const DECODAGE = [
-  'En 2017, Ron Barry a décodé ce signal à partir d’une copie restée sur Terre. Les images qu’il en a fait ressortir gardent leurs défauts : des stries, des trames et des pertes, traces de leur passage par le son.',
-  'Ici, chacune est traduite en volume, pour devenir un objet que l’on peut approcher, tourner et regarder autrement.',
-];
-const APPEL = 'Voyager 1 ne reviendra pas. Mais ce qu’elle emporte peut encore nous parvenir. Reprenez contact avec elle et redécouvrez son message sous une forme nouvelle : ses 116 images, des salutations en 55 langues, les sons de la Terre et sa musique.';
-const BOUTON = 'Établir le contact';
+const DATES: Record<string, string> = { '01': '1977', '02': t({ en: '5 September 1977', fr: '5 septembre 1977' }), '03': t({ en: '14 February 1990', fr: '14 février 1990' }) };
+const DECODAGE = t({
+  en: [
+    'In 2017, Ron Barry decoded this signal from a copy that stayed on Earth. The images he brought back keep their flaws: streaks, patterns and dropouts, traces of their journey through sound.',
+    'Here, each one is translated into volume, becoming an object you can approach, turn around and look at differently.',
+  ],
+  fr: [
+    'En 2017, Ron Barry a décodé ce signal à partir d’une copie restée sur Terre. Les images qu’il en a fait ressortir gardent leurs défauts : des stries, des trames et des pertes, traces de leur passage par le son.',
+    'Ici, chacune est traduite en volume, pour devenir un objet que l’on peut approcher, tourner et regarder autrement.',
+  ],
+});
+const APPEL = t({ en: 'Voyager 1 will never return. But what it carries can still reach us. Get back in touch with it and rediscover its message in a new form: its 116 images, greetings in 55 languages, the sounds of Earth and its music.',
+  fr: 'Voyager 1 ne reviendra pas. Mais ce qu’elle emporte peut encore nous parvenir. Reprenez contact avec elle et redécouvrez son message sous une forme nouvelle : ses 116 images, des salutations en 55 langues, les sons de la Terre et sa musique.' });
+const BOUTON = t({ en: 'Make contact', fr: 'Établir le contact' });
+const CONSEIL = t({ en: '(sound recommended)', fr: '(son recommandé)' });
+const SUITE_LIRE = t({ en: 'Read on', fr: 'Lire la suite' });
 
 /** Mode test (?debug) : les images d'origine et leurs réglages en direct (panneau R). Sinon : les images déjà réglées (tools/cuire-reglages.py). */
 const REGLER = new URLSearchParams(location.search).has('debug');
@@ -50,19 +65,19 @@ export function prelude(): Promise<void> {
   return new Promise((resolve) => {
     const root = document.createElement('section');
     root.className = REGLER ? 'prelude attente' : 'prelude attente cuit';   // (images déjà réglées : aucun filtre à calculer)   // invisible tant que tout n'est pas prêt : tout apparaît ensemble, en fondu
-    root.setAttribute('aria-label', 'Voyager 1, avant d’entrer');
+    root.setAttribute('aria-label', t({ en: 'Voyager 1, before entering', fr: 'Voyager 1, avant d’entrer' }));
     root.classList.add('recit-long');
     root.innerHTML = `
       <div class="p-long">
         <header class="p-ouverture">
-          <h1 class="p-titre p-mod">Voyageur 1<br />et le Golden Record</h1>
+          <h1 class="p-titre p-mod">${t({ en: 'Voyager 1<br />and the Golden Record', fr: 'Voyageur 1<br />et le disque d’or' })}</h1>
           <p class="p-chapeau p-mod">${OUVERTURE}</p>
-          <button class="p-defiler p-mod" type="button" aria-label="Lire la suite"><span>Lire la suite</span><i aria-hidden="true"></i></button>
+          <button class="p-defiler p-mod" type="button" aria-label="${SUITE_LIRE}"><span>${SUITE_LIRE}</span><i aria-hidden="true"></i></button>
         </header>
         ${ECRANS.map((e, k) => `
         <section class="p-chap${k % 2 ? ' p-inverse' : ''}${e.terre ? ' p-large' : ''}">
           <figure class="p-tirage p-mod" style="aspect-ratio:${e.ratio};--r:${e.ratio.replace(' / ', '/')}"><img src="${chemin(REGLER ? e.img : e.cuit)}" alt="" decoding="async"${e.coupe ? ` style="${coupe(e.coupe)}"` : ''} />${e.terre ? `
-            <span class="p-terre" style="left:${TERRE.x}%;top:${TERRE.y}%" aria-hidden="true"><i></i><b>la Terre</b></span>` : ''}</figure>
+            <span class="p-terre" style="left:${TERRE.x}%;top:${TERRE.y}%" aria-hidden="true"><i></i><b>${t({ en: 'Earth', fr: 'la Terre' })}</b></span>` : ''}</figure>
           <div class="p-texte p-mod">
             <p class="p-date">${e.n} · ${DATES[e.n]}</p>
             <h2>${e.titre}</h2>
@@ -77,9 +92,10 @@ export function prelude(): Promise<void> {
         </section>
         <section class="p-fin">
           <p class="p-appel p-mod">${APPEL}</p>
-          <div class="p-pied p-mod"><button class="p-ecouter grave" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.3"/><path class="onde" d="M8.8 8.8a4.5 4.5 0 0 0 0 6.4M15.2 8.8a4.5 4.5 0 0 1 0 6.4"/><path class="onde o2" d="M6 6a8.5 8.5 0 0 0 0 12M18 6a8.5 8.5 0 0 1 0 12"/></svg><small class="p-conseil" data-t="(son recommandé)"><i>(son recommandé)</i></small><span>${BOUTON}</span></button></div>
+          <div class="p-pied p-mod"><button class="p-ecouter grave" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.3"/><path class="onde" d="M8.8 8.8a4.5 4.5 0 0 0 0 6.4M15.2 8.8a4.5 4.5 0 0 1 0 6.4"/><path class="onde o2" d="M6 6a8.5 8.5 0 0 0 0 12M18 6a8.5 8.5 0 0 1 0 12"/></svg><small class="p-conseil" data-t="${CONSEIL}"><i>${CONSEIL}</i></small><span>${BOUTON}</span></button></div>
         </section>
       </div>`;
+    root.querySelector('.p-ouverture')!.prepend(boutonLangue());   // EN · FR : seulement au début, il part avec l'ouverture quand on avance
     // « Lire la suite » : descend en douceur jusqu'au premier chapitre
     root.querySelector('.p-defiler')!.addEventListener('click', () => root.querySelector('.p-chap')!.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }));
     // chaque chapitre apparaît doucement quand il arrive à l'écran (une seule fois)

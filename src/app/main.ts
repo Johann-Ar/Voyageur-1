@@ -3,6 +3,7 @@
  * Deux vues des mêmes images : le disque (par défaut, après l'accueil) et la galerie (ordre au hasard,
  * tiré à chaque ouverture). Un clic ouvre l'image en volume.
  */
+import { t, traduirePage } from './i18n.ts';
 import { chemin, donnee } from './res.ts';
 import { loadArchives, loadBitmap, bitmapToRGBA, type Archive } from './data.ts';
 import { bitmapToBlob } from './exports.ts';
@@ -47,7 +48,7 @@ function setVue(v: Vue, garde = false) {
   document.body.classList.toggle('vue-disque', v === 'disque');
   if (v === 'grille') { grid.hidden = false; if (!garde) stage.hidden = true; } else { stage.hidden = false; if (!garde) grid.hidden = true; }   // garde : l'autre vue reste le temps du fondu
   vueBtn.setAttribute('aria-pressed', String(v === 'disque'));
-  vueBtn.setAttribute('aria-label', v === 'disque' ? 'Afficher la grille' : 'Afficher le disque');
+  vueBtn.setAttribute('aria-label', v === 'disque' ? t({ en: 'Show the gallery', fr: 'Afficher la galerie' }) : t({ en: 'Show the record', fr: 'Afficher le disque' }));
   if (v === 'disque' && !carousel) { carousel = new DiscCarousel(stage, carouselArrive && document.body.classList.contains('welcome')); carousel.onOpen = (i) => open(i); }
   renderGrid();
 }
@@ -92,7 +93,7 @@ function renderGrid() {
     b.style.setProperty('--a', String(it.aspect));
     b.style.setProperty('--i', String(Math.min(i, 40)));
     b.style.order = String(rang(it.id));   // affichage dans un ordre au hasard
-    b.setAttribute('aria-label', `Image ${it.a.position} du disque`);
+    b.setAttribute('aria-label', t({ en: `Record image ${it.a.position}`, fr: `Image ${it.a.position} du disque` }));
     const img = document.createElement('img');
     img.src = thumbSrc(it); img.alt = ''; img.loading = i < 24 ? 'eager' : 'lazy'; img.decoding = 'async';
     img.onload = () => b.classList.add('in');
@@ -110,7 +111,7 @@ function titleOf(it: Item) {
 function renderDisc() {
   carousel?.setItems(items.map((it) => ({
     id: it.id, thumb: thumbSrc(it), aspect: it.aspect, mine: false,
-    label: `Image ${it.a.position} du disque`,
+    label: t({ en: `Record image ${it.a.position}`, fr: `Image ${it.a.position} du disque` }),
     title: titleOf(it),
   })));
 }
@@ -166,7 +167,7 @@ async function enter(i: number, delay: number) {
     viewerEl.classList.add('on');
     platine.effet('apparition', 0, 0, 1, 1.0);   // pile quand le volume se condense (≈ 1 s), pas au clic
     if (old && old !== bmp) old.close();   // libère l'image précédente (mémoire)
-  } catch (e) { say('Cette image ne peut pas s’afficher.'); console.error(e); if (focused === i) focused = current = -1; }   // on pourra la rouvrir
+  } catch (e) { say(t({ en: 'This image cannot be displayed.', fr: 'Cette image ne peut pas s’afficher.' })); console.error(e); if (focused === i) focused = current = -1; }   // on pourra la rouvrir
   finally { moving--; }
 }
 
@@ -274,6 +275,7 @@ window.addEventListener('keydown', (e) => {
   else if (e.key === 'ArrowLeft' && focused >= 0) open(focused - 1, true);
 });
 // ─── démarrage ────────────────────────────────────────────────────────────────
+traduirePage();
 paintSpace(); twinkle();
 spinNear($('.brand .disc'));
 refletIcones('.vue-btn, .settings-btn');   // même reflet doré que le titre, sur les icônes
@@ -290,5 +292,5 @@ else { document.body.classList.remove('welcome'); platine.play('musiques'); }   
     setVue(vue);
     const q = new URLSearchParams(location.search).get('image');
     if (q) { const i = items.findIndex((x) => x.id === q); if (i >= 0) open(i); }
-  } catch (e) { console.error(e); say('La collection n’a pas pu se charger.'); }
+  } catch (e) { console.error(e); say(t({ en: 'The collection could not be loaded.', fr: 'La collection n’a pas pu se charger.' })); }
 })();
