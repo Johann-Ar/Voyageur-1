@@ -55,7 +55,7 @@ export function prelude(): Promise<void> {
     root.innerHTML = `
       <div class="p-long">
         <header class="p-ouverture">
-          <h1 class="p-titre p-mod">Voyageur 1<br />Le disque d’or</h1>
+          <h1 class="p-titre p-mod">Voyageur 1<br />et le Golden Record</h1>
           <p class="p-chapeau p-mod">${OUVERTURE}</p>
           <button class="p-defiler p-mod" type="button" aria-label="Lire la suite"><span>Lire la suite</span><i aria-hidden="true"></i></button>
         </header>

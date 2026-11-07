@@ -1,4 +1,4 @@
-# Voyageur 1 — Le disque d’or
+# Voyageur 1 et le Golden Record
 
 Site web de découverte du **Voyager Golden Record**, le disque d’or embarqué en 1977 à bord de Voyager 1 et Voyager 2.
 

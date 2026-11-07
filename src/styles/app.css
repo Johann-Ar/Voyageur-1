@@ -22,7 +22,7 @@ html.ecran-simple .fond, html.ecran-simple body.space .grid::before { filter: br
 .brand:hover .word, .brand:hover .sous-titre, .add, .vue-btn .vue-lbl > span, .p-ecouter span, .p-titre { background: linear-gradient(125deg, var(--lumiere) 44.5%, #b9862c 47.3%, #f0bd52 48.4%, #fff3cf 49.4%, #ffffff 50%, #fff3cf 50.6%, #f0bd52 51.6%, #b9862c 52.7%, var(--lumiere) 55.5%) 100% 0 / 300% 100% no-repeat;   /* en diagonale, plus fin : ambre, or, cœur blanc */
   -webkit-background-clip: text; background-clip: text; color: transparent !important; -webkit-text-fill-color: transparent; }
 .brand:hover .word, .add:hover, .vue-btn:hover .vue-lbl > span, .p-ecouter:hover span, .p-ecouter:focus-visible span { animation: reflet 1.25s cubic-bezier(.35, .1, .25, 1) 1; }
-.brand:hover .sous-titre { animation: reflet 1.25s cubic-bezier(.35, .1, .25, 1) .7s 1; }   /* « LE DISQUE D’OR » : juste après « VOYAGEUR 1 » */
+.brand:hover .sous-titre { animation: reflet 1.25s cubic-bezier(.35, .1, .25, 1) .7s 1; }   /* « ET LE GOLDEN RECORD » : juste après « VOYAGEUR 1 » */
 @keyframes reflet { from { background-position: 100% 0; } to { background-position: 0% 0; } }
 /* le titre de l'accueil : le reflet passe de lui-même, régulièrement (toutes les 7 s), et aussi au survol */
 .p-titre { animation: reflet-regulier 7s cubic-bezier(.35, .1, .25, 1) 1.5s infinite; }
