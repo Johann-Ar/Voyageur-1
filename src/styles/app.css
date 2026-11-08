@@ -401,7 +401,7 @@ html:has(body.welcome), body.welcome { overflow: hidden; }
 .p-defiler { align-self: center; display: inline-flex; flex-direction: column; align-items: center; gap: 12px; margin-top: clamp(90px, 20vh, 230px); padding: 0; background: none; border: 0; cursor: pointer;
   color: rgba(255, 255, 255, .62); font: 400 12px/1 var(--corps); letter-spacing: .14em; text-transform: uppercase; transition: color .3s ease; }
 .p-defiler:hover, .p-defiler:focus-visible { color: #fff; }
-.p-defiler i { position: relative; width: 1px; height: 46px; overflow: hidden; background: rgba(255, 255, 255, .18); }
+.p-defiler i { position: relative; width: 1px; height: 46px; overflow: hidden; background: rgba(255, 255, 255, .18); transform: scaleY(-1); }   /* (retourné : le trait remonte) */
 .p-defiler i::after { content: ''; position: absolute; left: 0; top: -40%; width: 1px; height: 40%; background: #fff; animation: defiler 2.4s cubic-bezier(.6, 0, .3, 1) infinite; }
 @keyframes defiler { to { top: 100%; } }
 /* un chapitre : la photo d'un côté, le texte de l'autre (en alternance) */
