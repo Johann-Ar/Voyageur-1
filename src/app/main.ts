@@ -46,7 +46,8 @@ function setVue(v: Vue, garde = false) {
   vue = v;
   try { localStorage.setItem('voyageur-vue', v); } catch { /* stockage indisponible */ }
   document.body.classList.toggle('vue-disque', v === 'disque');
-  if (v === 'grille') { grid.hidden = false; if (!garde) stage.hidden = true; } else { stage.hidden = false; if (!garde) grid.hidden = true; }   // garde : l'autre vue reste le temps du fondu
+  if (v === 'grille') { grid.hidden = false; grid.classList.remove('repos'); if (!garde) stage.classList.add('repos'); } else { stage.hidden = false; stage.classList.remove('repos'); if (!garde) grid.classList.add('repos'); }   // garde : l'autre vue reste le temps du fondu
+  // (la galerie n'est jamais retirée de la page : « au repos », elle reste en place mais invisible, ses images déjà décodées — elle revient sans attendre)
   vueBtn.setAttribute('aria-pressed', String(v === 'disque'));
   vueBtn.setAttribute('aria-label', v === 'disque' ? t({ en: 'Show the gallery', fr: 'Afficher la galerie' }) : t({ en: 'Show the record', fr: 'Afficher le disque' }));
   if (v === 'disque' && !carousel) { carousel = new DiscCarousel(stage, carouselArrive && document.body.classList.contains('welcome')); carousel.onOpen = (i) => open(i); }
@@ -59,7 +60,7 @@ async function preparerVisibles() {
   const h = innerHeight, vis: HTMLElement[] = [];
   for (const c of grid.querySelectorAll<HTMLElement>('.cell')) { const r = c.getBoundingClientRect(); if (r.bottom > -40 && r.top < h + 40) vis.push(c); }
   const imgs = vis.map((c) => c.querySelector('img')!).filter(Boolean);
-  await Promise.race([Promise.allSettled(imgs.map((im) => im.decode())), wait(600)]);
+  await Promise.race([Promise.allSettled(imgs.map((im) => im.decode())), wait(250)]);
   for (const c of vis) { c.style.transition = 'none'; c.classList.add('in'); }
   void grid.offsetWidth;
   for (const c of vis) c.style.transition = '';
@@ -68,6 +69,7 @@ vueBtn.addEventListener('click', async () => {
   if (switching) return; switching = true;
   try {
     for (const a of grid.getAnimations()) a.cancel();
+    grid.style.transition = 'none';   // (la transition CSS d'opacité de la galerie, pour l'accueil, se relançait à la fin du fondu : la galerie s'éteignait puis revenait)
     if (vue === 'disque') {
       // la galerie se pose par-dessus le disque (resté à sa place, dessous) : un seul fondu, d'un bloc
       melanger();
@@ -76,16 +78,16 @@ vueBtn.addEventListener('click', async () => {
       scrollTo(0, 0);
       await preparerVisibles();
       await grid.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 750, easing: DOUX }).finished;
-      grid.style.opacity = '';
-      if ((vue as Vue) === 'grille') stage.hidden = true;     // le disque, caché dessous, ne calcule plus rien
+      grid.style.opacity = ''; void grid.offsetWidth;
+      if ((vue as Vue) === 'grille') stage.classList.add('repos');     // le disque, en place mais invisible dessous : il ne calcule plus rien, et revient sans attendre
     } else {
       // la galerie s'efface sur place et découvre le disque (fixe : le défilement n'y change rien)
       setVue('disque', true);
-      await grid.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 600, easing: 'ease-in-out' }).finished;
-      if ((vue as Vue) === 'disque') { grid.hidden = true; scrollTo(0, 0); }
+      await grid.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 650, easing: 'cubic-bezier(.4, 0, .2, 1)' }).finished;
+      if ((vue as Vue) === 'disque') { grid.classList.add('repos'); scrollTo(0, 0); }
     }
   } catch { /* animation interrompue */ }
-  finally { switching = false; }   // une erreur ne bloque jamais le bouton
+  finally { grid.style.transition = ''; switching = false; }   // une erreur ne bloque jamais le bouton
 });
 
 // la galerie s'affiche dans un ordre au hasard, tiré de nouveau à chaque ouverture de la vue
@@ -93,7 +95,40 @@ let ordre = new Map<string, number>();
 function melanger() {
   ordre = new Map(items.map((it) => [it.id, Math.floor(Math.random() * 1e6)]));
   for (const c of grid.querySelectorAll<HTMLElement>('.cell')) { c.style.order = String(rang(c.dataset.id!)); c.classList.remove('in'); }
+  justifier();
 }
+
+/**
+ * Grille justifiée : chaque rangée remplit exactement toute la largeur (aucun vide à droite), toutes les images d'une
+ * rangée ont la même hauteur (proche de --h) et gardent leurs proportions. Seule la dernière rangée reste à la hauteur
+ * normale, alignée à gauche. Recalculée à chaque tirage de l'ordre et à chaque changement de taille de la fenêtre.
+ */
+const sonde = document.createElement('span');
+function justifier() {
+  const cells = [...grid.querySelectorAll<HTMLElement>('.cell')];
+  if (!cells.length) return;
+  const cs = getComputedStyle(grid);
+  const W = grid.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  if (W <= 0) return;
+  const gap = parseFloat(cs.columnGap) || 6;
+  sonde.style.cssText = 'position:absolute;visibility:hidden;width:0;height:var(--h)';
+  if (!sonde.isConnected) grid.append(sonde);
+  const H = sonde.offsetHeight || 160;
+  const poser = (r: HTMLElement[], h: number) => { for (const c of r) { c.style.width = (+c.style.getPropertyValue('--a') * h).toFixed(2) + 'px'; c.style.height = h.toFixed(2) + 'px'; } };
+  cells.sort((a, b) => +a.style.order - +b.style.order);
+  const aspect = (c: HTMLElement) => +c.style.getPropertyValue('--a');
+  const hauteurPleine = (r: HTMLElement[]) => (W - gap * (r.length - 1) - 0.5) / r.reduce((t, c) => t + aspect(c), 0);   // (0,5 px de marge : jamais de retour à la ligne par arrondi)
+  const rangees: HTMLElement[][] = []; let r: HTMLElement[] = [], somme = 0;
+  for (const c of cells) {
+    r.push(c); somme += aspect(c);
+    if (somme * H + gap * (r.length - 1) >= W) { rangees.push(r); r = []; somme = 0; }
+  }
+  // la dernière rangée aussi remplit toute la largeur : agrandie si elle est presque pleine, sinon fondue dans la précédente
+  if (r.length) { if (hauteurPleine(r) <= H * 1.5 || !rangees.length) rangees.push(r); else rangees[rangees.length - 1].push(...r); }
+  for (const rg of rangees) poser(rg, hauteurPleine(rg));
+}
+let rzGrille = 0;
+addEventListener('resize', () => { if (!rzGrille) rzGrille = requestAnimationFrame(() => { rzGrille = 0; justifier(); }); });
 function rang(id: string) { let r = ordre.get(id); if (r === undefined) { r = Math.floor(Math.random() * 1e6); ordre.set(id, r); } return r; }
 
 // au défilement : chaque vignette apparaît quand elle arrive à l'écran (et que son image est prête), en montant doucement ;
@@ -116,7 +151,12 @@ const apparition = new IntersectionObserver((es) => {
 
 function renderGrid() {
   if (vue === 'disque') { renderDisc(); return; }
-  if (grid.querySelector('.cell')) { for (const c of grid.querySelectorAll<HTMLElement>('.cell')) if (!c.classList.contains('in')) apparition.observe(c); return; }   // déjà construite : on la garde
+  construireGrille();
+  for (const c of grid.querySelectorAll<HTMLElement>('.cell')) if (!c.classList.contains('in')) apparition.observe(c);
+}
+/** La galerie, construite une seule fois (même cachée : ses premières vignettes se chargent d'avance, la bascule part sans attendre). */
+function construireGrille() {
+  if (grid.querySelector('.cell') || !items.length) return;
   items.forEach((it, i) => {
     const b = document.createElement('button');
     b.className = 'cell'; b.dataset.id = it.id;
@@ -124,21 +164,24 @@ function renderGrid() {
     b.style.order = String(rang(it.id));   // affichage dans un ordre au hasard
     b.setAttribute('aria-label', t({ en: `Record image ${it.a.position}`, fr: `Image ${it.a.position} du disque` }));
     const img = document.createElement('img');
-    img.src = thumbSrc(it); img.alt = ''; img.loading = i < 30 ? 'eager' : 'lazy'; img.decoding = 'async';
+    img.src = thumbSrc(it); img.alt = ''; img.decoding = 'async';   // (toutes chargées d'avance, même galerie cachée : 3,6 Mo pour les 116, et l'ordre au hasard peut mettre n'importe laquelle en haut)
     b.append(img);
     b.addEventListener('click', () => open(i));
     grid.append(b);
-    apparition.observe(b);
   });
-  const filler = document.createElement('span'); filler.className = 'filler'; grid.append(filler);
+  justifier();
 }
 
 function titleOf(it: Item) {
   return `${String(it.a.position).padStart(3, '0')} — ${it.a.titre_fr || it.a.titre_en}`;
 }
 
+let disqueRempli = '';   // les images déjà posées sur le disque : on ne le reconstruit pas pour rien (ses cartes rejoueraient leur arrivée)
 function renderDisc() {
-  carousel?.setItems(items.map((it) => ({
+  const cle = items.map((it) => it.id).join(',');
+  if (!carousel || cle === disqueRempli) return;
+  disqueRempli = cle;
+  carousel.setItems(items.map((it) => ({
     id: it.id, thumb: thumbSrc(it), aspect: it.aspect, mine: false,
     label: t({ en: `Record image ${it.a.position}`, fr: `Image ${it.a.position} du disque` }),
     title: titleOf(it),
@@ -319,6 +362,7 @@ else { document.body.classList.remove('welcome'); platine.play('musiques'); }   
     ];
     for (let k = items.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [items[k], items[j]] = [items[j], items[k]]; }   // ordre au hasard
     setVue(vue);
+    setTimeout(construireGrille, 1500);   // la galerie se prépare en arrière-plan (sans gêner l'arrivée du disque)
     const q = new URLSearchParams(location.search).get('image');
     if (q) { const i = items.findIndex((x) => x.id === q); if (i >= 0) open(i); }
   } catch (e) { console.error(e); say(t({ en: 'The collection could not be loaded.', fr: 'La collection n’a pas pu se charger.' })); }

@@ -103,7 +103,7 @@ export class DiscCarousel {
     let rz = 0; window.addEventListener('resize', () => { if (!rz) rz = requestAnimationFrame(() => { rz = 0; this.layout(); }); });   // au plus une mise en page par image pendant le redimensionnement
 
     window.addEventListener('wheel', (e) => {
-      if (this.root.hidden || document.body.classList.contains('viewing') || document.body.classList.contains('welcome') || (e.target as HTMLElement).closest('.settings')) return;
+      if (this.horsVue || document.body.classList.contains('viewing') || document.body.classList.contains('welcome') || (e.target as HTMLElement).closest('.settings')) return;
       e.preventDefault();
       this.touche();
       const d = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? -e.deltaX : e.deltaY) * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);   // glisser vers la droite : le disque tourne vers la droite
@@ -255,7 +255,7 @@ export class DiscCarousel {
   }
   private inviter(now: number) {
     if (!this.touchePas || reduceMotion) return;
-    const visible = !this.root.hidden && !document.body.classList.contains('viewing') && !document.body.classList.contains('welcome');
+    const visible = !this.horsVue && !document.body.classList.contains('viewing') && !document.body.classList.contains('welcome');
     if (!this.indice) {
       const tactile = matchMedia('(hover: none)').matches;
       const el = document.createElement('div'); el.className = 'tourner-indice'; el.setAttribute('aria-hidden', 'true');
@@ -272,6 +272,8 @@ export class DiscCarousel {
       for (const an of this.indice.querySelectorAll<SVGAnimationElement>('.bille > *')) { try { an.beginElement(); } catch { /* SVG animé indisponible */ } }
     }
   }
+  /** Le disque n'est pas à l'écran (retiré, ou « au repos » sous la galerie : en place mais invisible) : rien à calculer. */
+  private get horsVue() { return this.root.hidden || this.root.classList.contains('repos'); }
   start() { if (this.running) return; this.running = true; this.last = performance.now(); requestAnimationFrame(this.frame); }
 
   private frame = (now: number) => {
@@ -279,7 +281,7 @@ export class DiscCarousel {
     const dt = Math.min(0.05, (now - this.last) / 1000); this.last = now;
     const cl = document.body.classList;
     const cache = cl.contains('welcome') && !cl.contains('prechauffe');   // pendant l'accueil le disque est invisible : rien à calculer (il se prépare juste avant la fin)
-    if (!this.root.hidden && !cache) {
+    if (!this.horsVue && !cache) {
       if (this.target !== null) {
         const d = this.target - this.pos;
         this.pos += d * (1 - Math.pow(0.0005, dt));
