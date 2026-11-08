@@ -273,7 +273,8 @@ body.arrivee .top, body.arrivee .top-fade { transition: opacity 1.4s ease .2s; }
 /* au chargement : aucune barre de défilement (la page derrière l'accueil est masquée, le pré-accueil défile seul
    sur petit écran ; sur ordinateur il tient dans l'écran, sa barre reste cachée) */
 html:has(body.welcome), body.welcome { overflow: hidden; }
-@media (min-width: 901px) { .prelude { scrollbar-width: none; } .prelude::-webkit-scrollbar { display: none; } }
+/* jamais de barre de défilement visible (récit et galerie), à toutes les largeurs : on défile toujours à la molette, au doigt ou au clavier */
+html, .prelude { scrollbar-width: none; } html::-webkit-scrollbar, body::-webkit-scrollbar, .prelude::-webkit-scrollbar { display: none; }
 .prelude.part { pointer-events: none; overflow: hidden; }   /* pendant le voyage : pas de barre de défilement (les éléments sortent de l'écran) */
 /* au contact : le voyage de la caméra (prelude.ts) place chaque élément image par image ; rien ne s'efface */
 .prelude.part .p-mod { will-change: transform; }
