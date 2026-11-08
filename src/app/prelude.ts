@@ -156,20 +156,7 @@ export function prelude(): Promise<void> {
       ev.preventDefault(); suivante(bas ? 1 : -1);
     };
     addEventListener('keydown', touches);
-    // molette, pavé tactile, doigt : on défile librement ; quand le geste s'arrête, la page se pose d'elle-même, en douceur,
-    // sur l'étape la plus proche (si elle n'est pas trop loin) : guidé, sans être bloqué
-    let attente = 0;
-    const molette = () => {
-      if (enCours || root.classList.contains('part')) return;
-      clearTimeout(attente);
-      attente = window.setTimeout(() => {
-        if (enCours || root.classList.contains('part')) return;
-        const ici = root.scrollTop, cibles = etapes();
-        let proche = cibles[0]; for (const y of cibles) if (Math.abs(y - ici) < Math.abs(proche - ici)) proche = y;
-        if (Math.abs(proche - ici) < root.clientHeight * 0.38) allerA(proche);
-      }, 170);
-    };
-    root.addEventListener('scroll', molette, { passive: true });
+    // molette, pavé tactile, doigt : défilement entièrement libre (aucun recentrage automatique quand le geste s'arrête)
     const reprend = () => { if (enCours) { cancelAnimationFrame(anim); enCours = false; } };   // on reprend la main pendant que la page se pose : elle s'arrête
     root.addEventListener('wheel', reprend, { passive: true }); root.addEventListener('touchstart', reprend, { passive: true });
     const vu = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) { e.target.classList.add('lu'); vu.unobserve(e.target); } }, { root, threshold: 0.18 });
@@ -225,7 +212,7 @@ export function prelude(): Promise<void> {
     btn.addEventListener('click', () => {
       // l'icône se fige exactement dans l'état où elle est à l'instant du clic (pas de retour à son état de repos)
       for (const o of btn.querySelectorAll<HTMLElement | SVGElement>('.onde, .p-conseil i')) { const cs = getComputedStyle(o); o.style.opacity = cs.opacity; o.style.color = cs.color; o.style.animation = 'none'; }   // (le conseil aussi)
-      btn.disabled = true; platine.autoriser(); platine.detacher(); finReglages(); flotte?.(); cancelAnimationFrame(anim); removeEventListener('keydown', touches); root.removeEventListener('scroll', molette); clearTimeout(attente); vu.disconnect(); for (const el of root.querySelectorAll('.p-chap, .p-fin')) el.classList.add('lu');
+      btn.disabled = true; platine.autoriser(); platine.detacher(); finReglages(); flotte?.(); cancelAnimationFrame(anim); removeEventListener('keydown', touches); vu.disconnect(); for (const el of root.querySelectorAll('.p-chap, .p-fin')) el.classList.add('lu');
       root.classList.add('part');
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) { setTimeout(() => { root.remove(); terre.remove(); document.querySelector('.terre-nuit')?.remove(); document.querySelector('.terre-fondu')?.remove(); resolve(); }, 150); return; }
       voyage(root, resolve);
