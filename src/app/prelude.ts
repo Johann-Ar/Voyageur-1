@@ -161,6 +161,18 @@ export function prelude(): Promise<void> {
     root.addEventListener('wheel', reprend, { passive: true }); root.addEventListener('touchstart', reprend, { passive: true });
     const vu = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) { e.target.classList.add('lu'); vu.unobserve(e.target); } }, { root, threshold: 0.18 });
     for (const el of root.querySelectorAll('.p-chap, .p-fin')) vu.observe(el);
+    // le reflet doré du titre : il passe une fois, pile quand le titre est entièrement à l'écran — à l'arrivée (à la fin du fondu
+    // d'apparition du récit, voir plus bas), puis chaque fois qu'on revient sur lui après l'avoir quitté (pas de minuterie aveugle)
+    const titre = root.querySelector<HTMLElement>('.p-titre')!;
+    const brille = () => { titre.classList.remove('brille'); void titre.offsetWidth; titre.classList.add('brille'); };
+    titre.addEventListener('animationend', () => titre.classList.remove('brille'));
+    let titreParti = false;   // à l'arrivée, le titre est déjà à l'écran : son premier reflet part avec l'apparition du récit
+    const vuTitre = new IntersectionObserver(([e]) => {
+      if (e.intersectionRatio < 0.15) { titreParti = true; return; }
+      if (e.intersectionRatio < 0.9 || !titreParti) return;
+      titreParti = false; brille();
+    }, { root, threshold: [0, 0.15, 0.9, 1] });
+    vuTitre.observe(titre);
     // photo absente (pas encore téléchargée) : le cadre reste, vide et sombre
     for (const img of root.querySelectorAll('img')) img.addEventListener('error', () => img.classList.add('absente'));
     document.body.append(root);
@@ -176,14 +188,8 @@ export function prelude(): Promise<void> {
     terre.innerHTML = `<source src="${chemin('prelude/terre.mp4')}" type='video/mp4; codecs="hvc1"' /><source src="${chemin('prelude/terre-h264.mp4')}" type="video/mp4" />`;   // 4K natif : HEVC 10 bits (décodé par la carte graphique), sinon H.264
     terre.querySelector('source:last-child')!.addEventListener('error', () => terre.remove());
     // lue à vitesse normale : ralentir une vidéo à 24 images/s n'en montre plus que 14 par seconde (c'était la cause des saccades)
-    // la vidéo ne va que vers l'avant ; quand elle reboucle, un fondu bref (transparente un instant) remplace le saut d'image
-    let tPrec = 0;
-    terre.addEventListener('timeupdate', () => {
-      const t = terre.currentTime, d = terre.duration || 0;
-      if (d && d - t < 1.7) terre.classList.add('raccord');
-      else if (t < tPrec || t > 0.8) terre.classList.remove('raccord');
-      tPrec = t;
-    });
+    // la vidéo est un aller-retour (l'orbite ralentit jusqu'à l'arrêt, puis repart dans l'autre sens) : sa dernière image
+    // rejoint exactement la première, la boucle n'a ni saut ni fondu (la Terre ne disparaît jamais)
     const ciel = document.querySelector('.scintille'); if (ciel) ciel.after(terre); else document.body.prepend(terre);
     // autour de la courbe de la Terre, le ciel (fond et étoiles) s'éteint jusqu'au noir complet
     const nuit = document.createElement('div'); nuit.className = 'terre-nuit'; nuit.setAttribute('aria-hidden', 'true'); terre.before(nuit);
@@ -198,7 +204,7 @@ export function prelude(): Promise<void> {
     const veille = () => { if (document.hidden) terre.pause(); else if (terre.isConnected) void terre.play().catch(() => {}); };   // onglet caché : la vidéo s'arrête
     document.addEventListener('visibilitychange', veille);
     terre.addEventListener('emptied', () => document.removeEventListener('visibilitychange', veille));
-    void Promise.race([pret, new Promise((r) => setTimeout(r, 2000))]).then(() => requestAnimationFrame(() => { root.classList.remove('attente'); montre(); }));
+    void Promise.race([pret, new Promise((r) => setTimeout(r, 2000))]).then(() => requestAnimationFrame(() => { root.classList.remove('attente'); montre(); setTimeout(brille, 1100); }));   // (le reflet du titre, quand le récit a fini d'apparaître)
     setTimeout(() => platine.preparer(), 1500);   // le son se prépare en silence, pour que le clic soit instantané
     // « (son recommandé) » s'affiche en même temps que l'effet de survol du bouton (CSS) ; une fois vu, il ne clignote plus
     const bouton = root.querySelector('.p-ecouter') as HTMLElement;
@@ -212,7 +218,7 @@ export function prelude(): Promise<void> {
     btn.addEventListener('click', () => {
       // l'icône se fige exactement dans l'état où elle est à l'instant du clic (pas de retour à son état de repos)
       for (const o of btn.querySelectorAll<HTMLElement | SVGElement>('.onde, .p-conseil i')) { const cs = getComputedStyle(o); o.style.opacity = cs.opacity; o.style.color = cs.color; o.style.animation = 'none'; }   // (le conseil aussi)
-      btn.disabled = true; platine.autoriser(); platine.detacher(); finReglages(); flotte?.(); cancelAnimationFrame(anim); removeEventListener('keydown', touches); vu.disconnect(); for (const el of root.querySelectorAll('.p-chap, .p-fin')) el.classList.add('lu');
+      btn.disabled = true; platine.autoriser(); platine.detacher(); finReglages(); flotte?.(); cancelAnimationFrame(anim); removeEventListener('keydown', touches); vu.disconnect(); vuTitre.disconnect(); for (const el of root.querySelectorAll('.p-chap, .p-fin')) el.classList.add('lu');
       root.classList.add('part');
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) { setTimeout(() => { root.remove(); terre.remove(); document.querySelector('.terre-nuit')?.remove(); document.querySelector('.terre-fondu')?.remove(); resolve(); }, 150); return; }
       voyage(root, resolve);

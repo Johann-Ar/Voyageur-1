@@ -24,14 +24,14 @@ html.ecran-simple .fond, html.ecran-simple body.space .grid::before { filter: br
 .brand:hover .word, .add:hover, .vue-btn:hover .vue-lbl > span, .p-ecouter:hover span, .p-ecouter:focus-visible span { animation: reflet 1.25s cubic-bezier(.35, .1, .25, 1) 1; }
 .brand:hover .sous-titre { animation: reflet 1.25s cubic-bezier(.35, .1, .25, 1) .7s 1; }   /* « ET LE GOLDEN RECORD » : juste après « VOYAGEUR 1 » */
 @keyframes reflet { from { background-position: 100% 0; } to { background-position: 0% 0; } }
-/* le titre de l'accueil : le reflet passe de lui-même, régulièrement (toutes les 7 s), et aussi au survol */
-.p-titre { animation: reflet-regulier 7s cubic-bezier(.35, .1, .25, 1) 1.5s infinite; }
-.p-titre:hover { animation: reflet 1.25s cubic-bezier(.35, .1, .25, 1) 1; }
+/* le titre de l'accueil : le reflet passe une fois, pile quand le titre est à l'écran — à l'arrivée, puis chaque fois
+   qu'on y revient après l'avoir quitté (prelude.ts pose .brille) ; et aussi au survol */
+.p-titre.brille, .p-titre:hover { animation: reflet 1.25s cubic-bezier(.35, .1, .25, 1) 1; }
 /* le bouton « Établir le contact » : le même reflet, au même rythme, qui part pile quand celui du titre s'achève (1,5 s + 18 % de 7 s),
    comme une seule lumière qui passe du titre au bouton ; au survol, il reprend son reflet immédiat */
 .p-ecouter span { animation: reflet-regulier 7s cubic-bezier(.35, .1, .25, 1) 2.76s infinite; }
 @keyframes reflet-regulier { 0% { background-position: 100% 0; } 18%, 100% { background-position: 0% 0; } }
-@media (prefers-reduced-motion: reduce) { .p-titre, .p-ecouter span { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .p-titre, .p-titre.brille, .p-titre:hover, .p-ecouter span { animation: none; } }
 .grave svg { filter: drop-shadow(0 0 3px rgba(255, 255, 255, .35)); }
 /* arrivée : le recto du disque rejoint le logo */
 
@@ -55,12 +55,10 @@ html.ecran-simple .fond, html.ecran-simple body.space .grid::before { filter: br
 .grid { position: relative; z-index: 5; min-height: 100vh; }   /* la galerie se pose PAR-DESSUS le disque, qui reste là dessous */
 .grid::before { content: ''; position: fixed; inset: 0; z-index: -1; background: #000; pointer-events: none; }
 body.space .grid::before { background: #000 var(--space) center / 200% auto no-repeat; }
-.grid.cache { opacity: 0; pointer-events: none; }
-.grid.bascule { will-change: opacity; }
-.grid.bascule .cell { transition: none !important; }   /* pendant le fondu de la vue : un seul fondu, pas celui de chaque image */
 .grid { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px clamp(20px, 4vw, 56px) 90px; --h: clamp(112px, 14.5vw, 215px); }   /* images plus grandes, plus d'air entre elles */
 .cell { flex: var(--a) 1 calc(var(--a) * var(--h)); max-width: calc(var(--a) * var(--h) * 1.5); max-height: calc(var(--h) * 1.5); aspect-ratio: var(--a); position: relative; padding: 0; margin: 0; border: 0; border-radius: 7px; background: var(--noir-2);
-  cursor: zoom-in; overflow: hidden; opacity: 0; transform: translateY(8px); transition: opacity .6s ease, transform .6s ease; transition-delay: calc(var(--i) * 18ms); }
+  cursor: zoom-in; overflow: hidden; opacity: 0; transform: translateY(16px) scale(.985);
+  transition: opacity .85s cubic-bezier(.2, .7, .2, 1), transform 1s cubic-bezier(.2, .7, .2, 1); }   /* apparition à l'arrivée à l'écran (main.ts : apparition) */
 .cell.in { opacity: 1; transform: none; }
 .cell img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(1); transition: filter .35s, transform .6s cubic-bezier(.2, .7, .2, 1); }
 .filler { flex: 1000 1 0; order: 99999999; }   /* toujours en dernier, même avec l'ordre au hasard : la dernière ligne ne s'étire pas */
@@ -296,10 +294,19 @@ html, .prelude { scrollbar-width: none; } html::-webkit-scrollbar, body::-webkit
   transform-origin: 50% calc(var(--tw) / 4.68 * .57 - 50vh);
   background: linear-gradient(to bottom, #000 0%, rgba(0,0,0,0) 16%), linear-gradient(to right, #000 4%, rgba(0,0,0,0) 20%, rgba(0,0,0,0) 80%, #000 96%); }
 .terre-video::-webkit-media-controls, .terre-video::-webkit-media-controls-start-playback-button, .terre-video::-webkit-media-controls-overlay-play-button { display: none !important; -webkit-appearance: none; opacity: 0; }   /* Safari : jamais de bouton lecture */
-.terre-video.vue.raccord { opacity: .002; }   /* la boucle repart : un fondu bref au lieu d'un saut */
 /* le noir autour de la Terre : le fond et les étoiles s'éteignent en approchant de sa courbe (même mouvement que la vidéo pendant le voyage) */
 .terre-nuit { position: fixed; left: calc(50vw - var(--tw) * .95); top: -30vh; width: calc(var(--tw) * 1.9);   /* assez large pour que son dégradé s'éteigne avant ses bords (sinon ses côtés sombres se voyaient au recul) */ height: 160vh; z-index: 1;   /* plus grand que l'écran : au recul et au roulis, son bord ne se voit jamais (sans être énorme : plus léger) */ pointer-events: none; transform-origin: 50% 50%;
   background: radial-gradient(ellipse calc(var(--tw) * .857) calc(var(--tw) / 4.68 * 1.25) at 50% calc(130vh + var(--tw) / 4.68 * .28), #000 52%, rgba(0, 0, 0, .75) 68%, rgba(0, 0, 0, .3) 84%, transparent 100%); }
+/* pendant le voyage (le décrochage), la bande de la Terre traverse l'écran : ses extrémités et ses coins, d'habitude hors champ,
+   passeraient devant des étoiles encore visibles (on verrait le bord noir de la bande). Un halo noir plus large, centré sur la
+   bande, la couvre alors entièrement, avec une retombée très douce vers le ciel ; il suit le même mouvement (enfant de .terre-nuit).
+   Au repos il est invisible : l'accueil ne change pas. */
+.terre-nuit::after { content: ''; position: absolute; pointer-events: none;
+  left: calc(50% - var(--tw) * .9); width: calc(var(--tw) * 1.8);
+  top: calc(130vh - var(--tw) / 4.68 * 1.47); height: calc(var(--tw) / 4.68 * 2.8);   /* centré sur la bande (son centre est 0,07 de sa hauteur au-dessus du bas de l'écran) */
+  background: radial-gradient(closest-side, #000 70%, rgba(0, 0, 0, .55) 84%, rgba(0, 0, 0, 0) 100%);
+  opacity: 0; transition: opacity .7s ease; }
+body.voyage .terre-nuit::after { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .terre-video, .terre-nuit, .terre-fondu { display: none; } }
 .prelude::before, .prelude::after { content: ''; flex: 1 0 0; min-height: 0; }   /* l'espace libre : 40 % au-dessus du bloc (rectangle + bouton), 60 % en dessous (la Terre, en bas) */
 .prelude::after { flex-grow: 1; }   /* tout le bloc (texte, images, bouton) centré verticalement */
@@ -504,9 +511,9 @@ body.mode-rognage .cell { outline: 1px dashed rgba(255, 255, 255, .35); outline-
 .rgn-cadre i[data-h="sw"] { left: 0; top: 100%; cursor: nesw-resize; } .rgn-cadre i[data-h="w"] { left: 0; top: 50%; cursor: ew-resize; }
 .rgn-aide { margin: 0; color: rgba(255, 255, 255, .8); font: 12px/1.5 var(--mono); text-align: center; max-width: 90vw; }
 
-/* sélecteur de langue : seulement sur l'écran d'ouverture du récit (i18n.ts), en haut à droite ; il défile avec l'ouverture */
-.p-ouverture .langue { position: absolute; top: clamp(16px, 3vh, 28px); right: 0; z-index: 3; display: flex; align-items: center; gap: 8px;
-  font: 400 13px var(--mono); letter-spacing: .16em; color: var(--lumiere); }
+/* sélecteur de langue : seulement sur l'écran d'ouverture du récit (i18n.ts), centré en haut ; il défile avec l'ouverture */
+.p-ouverture .langue { position: absolute; top: clamp(16px, 3vh, 28px); left: 50%; transform: translateX(-50%); z-index: 3; display: flex; align-items: center; gap: 8px;
+  font: 400 clamp(15px, 1.12vw, 17.5px)/1.62 var(--corps); letter-spacing: 0; color: rgba(255, 255, 255, .9); }   /* le style du texte courant du récit (.p-chapeau) */
 .langue button { padding: 4px 2px; background: none; border: 0; color: inherit; font: inherit; letter-spacing: inherit; cursor: pointer; opacity: .45; transition: opacity .3s ease; }
 .langue button:hover, .langue button[aria-pressed="true"] { opacity: 1; }
 .langue span { opacity: .35; }

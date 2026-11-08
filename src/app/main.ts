@@ -53,53 +53,82 @@ function setVue(v: Vue, garde = false) {
   renderGrid();
 }
 let switching = false;
+const DOUX = 'cubic-bezier(.2, .7, .2, 1)';
+/** Les vignettes à l'écran : posées tout de suite (sans leur propre fondu) et décodées, pour que le fondu de la vue ne saccade pas. */
+async function preparerVisibles() {
+  const h = innerHeight, vis: HTMLElement[] = [];
+  for (const c of grid.querySelectorAll<HTMLElement>('.cell')) { const r = c.getBoundingClientRect(); if (r.bottom > -40 && r.top < h + 40) vis.push(c); }
+  const imgs = vis.map((c) => c.querySelector('img')!).filter(Boolean);
+  await Promise.race([Promise.allSettled(imgs.map((im) => im.decode())), wait(600)]);
+  for (const c of vis) { c.style.transition = 'none'; c.classList.add('in'); }
+  void grid.offsetWidth;
+  for (const c of vis) c.style.transition = '';
+}
 vueBtn.addEventListener('click', async () => {
   if (switching) return; switching = true;
   try {
-  const frame2 = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-  if (vue === 'disque') {
-    // la galerie se pose par-dessus le disque : son fond noir apparaît et le cache, le disque ne disparaît pas
-    melanger(); grid.classList.add('cache', 'bascule');
-    setVue('grille', true);
-    // les premières vignettes sont décodées AVANT le fondu : il ne saccade pas
-    const imgs = [...grid.querySelectorAll('img')].slice(0, 30) as HTMLImageElement[];
-    await Promise.race([Promise.allSettled(imgs.map((im) => im.decode())), wait(700)]);
-    for (const c of grid.children) c.classList.add('in');
-    await frame2(); grid.classList.remove('cache');
-    await wait(950); grid.classList.remove('bascule'); if ((vue as Vue) === 'grille') stage.hidden = true;
-  } else {
-    // la galerie s'efface et découvre le disque, resté à sa place
-    const y = scrollY;
-    grid.classList.add('bascule');
-    setVue('disque', true);
-    grid.style.transform = `translateY(${scrollY - y}px)`;   // si le défilement est remis à zéro, la galerie reste quand même où elle était pendant qu'elle s'efface
-    await frame2(); grid.classList.add('cache');
-    await wait(950); if ((vue as Vue) === 'disque') grid.hidden = true; grid.classList.remove('cache', 'bascule'); grid.style.transform = '';
-  }
-  } finally { switching = false; }   // une erreur ne bloque jamais le bouton
+    for (const a of grid.getAnimations()) a.cancel();
+    if (vue === 'disque') {
+      // la galerie se pose par-dessus le disque (resté à sa place, dessous) : un seul fondu, d'un bloc
+      melanger();
+      grid.style.opacity = '0';
+      setVue('grille', true);
+      scrollTo(0, 0);
+      await preparerVisibles();
+      await grid.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 750, easing: DOUX }).finished;
+      grid.style.opacity = '';
+      if ((vue as Vue) === 'grille') stage.hidden = true;     // le disque, caché dessous, ne calcule plus rien
+    } else {
+      // la galerie s'efface sur place et découvre le disque (fixe : le défilement n'y change rien)
+      setVue('disque', true);
+      await grid.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 600, easing: 'ease-in-out' }).finished;
+      if ((vue as Vue) === 'disque') { grid.hidden = true; scrollTo(0, 0); }
+    }
+  } catch { /* animation interrompue */ }
+  finally { switching = false; }   // une erreur ne bloque jamais le bouton
 });
 
 // la galerie s'affiche dans un ordre au hasard, tiré de nouveau à chaque ouverture de la vue
 let ordre = new Map<string, number>();
-function melanger() { ordre = new Map(items.map((it) => [it.id, Math.floor(Math.random() * 1e6)])); }
+function melanger() {
+  ordre = new Map(items.map((it) => [it.id, Math.floor(Math.random() * 1e6)]));
+  for (const c of grid.querySelectorAll<HTMLElement>('.cell')) { c.style.order = String(rang(c.dataset.id!)); c.classList.remove('in'); }
+}
 function rang(id: string) { let r = ordre.get(id); if (r === undefined) { r = Math.floor(Math.random() * 1e6); ordre.set(id, r); } return r; }
+
+// au défilement : chaque vignette apparaît quand elle arrive à l'écran (et que son image est prête), en montant doucement ;
+// celles qui arrivent ensemble (une rangée) se suivent de peu, de gauche à droite
+const apparition = new IntersectionObserver((es) => {
+  const arrivent = es.filter((e) => e.isIntersecting).map((e) => e.target as HTMLElement)
+    .sort((a, b) => a.offsetTop - b.offsetTop || a.offsetLeft - b.offsetLeft);
+  arrivent.forEach((c, k) => {
+    apparition.unobserve(c);
+    const img = c.querySelector('img')!;
+    const montre = () => {
+      c.style.transitionDelay = Math.min(k * 55, 330) + 'ms';
+      c.classList.add('in');
+      setTimeout(() => { c.style.transitionDelay = ''; }, 1300);
+    };
+    if (img.complete && img.naturalWidth) montre();
+    else img.decode().then(montre, montre);
+  });
+}, { rootMargin: '0px 0px -6% 0px', threshold: 0.12 });
 
 function renderGrid() {
   if (vue === 'disque') { renderDisc(); return; }
-  grid.innerHTML = '';
+  if (grid.querySelector('.cell')) { for (const c of grid.querySelectorAll<HTMLElement>('.cell')) if (!c.classList.contains('in')) apparition.observe(c); return; }   // déjà construite : on la garde
   items.forEach((it, i) => {
     const b = document.createElement('button');
-    b.className = 'cell';
+    b.className = 'cell'; b.dataset.id = it.id;
     b.style.setProperty('--a', String(it.aspect));
-    b.style.setProperty('--i', String(Math.min(i, 40)));
     b.style.order = String(rang(it.id));   // affichage dans un ordre au hasard
     b.setAttribute('aria-label', t({ en: `Record image ${it.a.position}`, fr: `Image ${it.a.position} du disque` }));
     const img = document.createElement('img');
-    img.src = thumbSrc(it); img.alt = ''; img.loading = i < 24 ? 'eager' : 'lazy'; img.decoding = 'async';
-    img.onload = () => b.classList.add('in');
+    img.src = thumbSrc(it); img.alt = ''; img.loading = i < 30 ? 'eager' : 'lazy'; img.decoding = 'async';
     b.append(img);
     b.addEventListener('click', () => open(i));
     grid.append(b);
+    apparition.observe(b);
   });
   const filler = document.createElement('span'); filler.className = 'filler'; grid.append(filler);
 }
