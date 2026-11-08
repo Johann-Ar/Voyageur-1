@@ -395,11 +395,14 @@ html:has(body.welcome), body.welcome { overflow: hidden; }
 .p-long { --marge: clamp(20px, 6vw, 110px); position: relative; max-width: 1500px; margin: 0 auto; padding: 0 var(--marge); box-sizing: border-box; }
 .p-long p { text-align: left; hyphens: manual; -webkit-hyphens: manual; text-wrap: pretty; }
 /* l'ouverture : le titre et la première phrase, sur tout l'écran */
-.p-ouverture { min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 10vh 0 16vh; box-sizing: border-box; }
+.p-ouverture { --bas-ouverture: 16vh; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 10vh 0 0; box-sizing: border-box; }
+/* le titre et le texte restent centrés comme avant (10vh au-dessus, 16vh en dessous, l'espace libre partagé à égalité) ;
+   sous le texte, la zone .p-bas descend jusqu'en bas de l'écran et l'icône de défilement y est centrée : pas de calcul en JS */
+.p-ouverture::before { content: ''; flex: 1 1 0; }
+.p-ouverture .p-bas { flex: 1 1 var(--bas-ouverture); align-self: stretch; display: grid; place-items: center; }
 .recit-long .p-titre { margin: 0 0 .5em; font-size: clamp(48px, 7.5vw, 120px); line-height: .92; }
 .p-chapeau { margin: 0 auto; max-width: 36ch; font: 400 clamp(17px, 1.55vw, 23px)/1.55 var(--corps); letter-spacing: 0; color: #fff; }
-.p-defiler { align-self: center; display: inline-flex; flex-direction: column; align-items: center; gap: 12px; margin-top: clamp(90px, 20vh, 230px); padding: 0; background: none; border: 0; cursor: pointer;
-  color: rgba(255, 255, 255, .62); font: 400 12px/1 var(--corps); letter-spacing: .14em; text-transform: uppercase; transition: color .3s ease; }
+.p-defiler { display: inline-flex; padding: 12px 18px; background: none; border: 0; cursor: pointer; color: rgba(255, 255, 255, .62); transition: color .3s ease; }   /* (une icône seule, sans texte ; zone de clic un peu plus large que le trait) */
 .p-defiler:hover, .p-defiler:focus-visible { color: #fff; }
 .p-defiler i { position: relative; width: 1px; height: 46px; overflow: hidden; background: rgba(255, 255, 255, .18); transform: scaleY(-1); }   /* (retourné : le trait remonte) */
 .p-defiler i::after { content: ''; position: absolute; left: 0; top: -40%; width: 1px; height: 40%; background: #fff; animation: defiler 2.4s cubic-bezier(.6, 0, .3, 1) infinite; }
@@ -434,7 +437,7 @@ html:has(body.welcome), body.welcome { overflow: hidden; }
   .p-chap { display: block; min-height: 0; padding: 9vh 0; }
   .p-chap .p-tirage, .p-chap.p-inverse .p-tirage { width: min(100%, calc(62vh * var(--r, 1))); max-height: none; margin: 0 auto 28px; }
   .p-texte p:not(.p-date) { max-width: none; }
-  .p-ouverture { padding: 10vh 0 22vh; }
+  .p-ouverture { --bas-ouverture: 22vh; }
 }
 
 
@@ -444,9 +447,8 @@ html:has(body.welcome), body.welcome { overflow: hidden; }
   font: 400 clamp(15px, 1.12vw, 17.5px)/1.62 var(--corps); letter-spacing: 0; color: rgba(255, 255, 255, .9); }   /* (la taille des légendes des photos, partout) */
 
 
-/* « Lire la suite » : exactement à la place de « Établir le contact » (juste au-dessus de la Terre) */
+/* l'ouverture sert aussi de repère au sélecteur de langue (position absolue) */
 .p-ouverture { position: relative; }
-.p-ouverture .p-defiler { position: absolute; left: 0; right: 0; width: fit-content; margin: 0 auto; bottom: calc(var(--tw) / 4.68 * .21 + 1.5vh - 8px); }   /* (bas aligné sur celui de « Établir le contact » et de son icône) */
 
 /* clavier : un repère visible sur ce qui a le focus (jamais à la souris), en or discret */
 :is(a, button, [tabindex]):not(.w-disc):focus-visible { outline: 1px solid rgba(240, 189, 82, .85) !important; outline-offset: 4px; }

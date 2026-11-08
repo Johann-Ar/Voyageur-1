@@ -72,7 +72,7 @@ export function prelude(): Promise<void> {
         <header class="p-ouverture">
           <h1 class="p-titre p-mod">${t({ en: 'Voyager 1<br />and the Golden Record', fr: 'Voyageur 1<br />et le disque d’or' })}</h1>
           <p class="p-chapeau p-mod">${OUVERTURE}</p>
-          <button class="p-defiler p-mod" type="button" aria-label="${SUITE_LIRE}"><span>${SUITE_LIRE}</span><i aria-hidden="true"></i></button>
+          <div class="p-bas"><button class="p-defiler p-mod" type="button" aria-label="${SUITE_LIRE}"><i aria-hidden="true"></i></button></div>
         </header>
         ${ECRANS.map((e, k) => `
         <section class="p-chap${k % 2 ? ' p-inverse' : ''}${e.terre ? ' p-large' : ''}">
